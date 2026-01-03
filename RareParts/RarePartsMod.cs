@@ -80,9 +80,11 @@ public class RarePartsMod : MelonMod
                 _modIsEnable = true;
             }
 
-            UIManager.Get().ShowPopup("[RareParts]", $"the mod has been status: {_modIsEnable}.", PopupType.Normal);
+            var message = _modIsEnable ? "the mod is enabled" : "the mod is disabled";
+            
+            UIManager.Get().ShowPopup("[RareParts]", message, PopupType.Normal);
 
-            MelonLogger.Msg($"the mod has been {_modIsEnable}");
+            MelonLogger.Msg(message);
         }
 
         if (!_modIsEnable)
