@@ -14,6 +14,7 @@
     <Deterministic>true</Deterministic>
     <TargetFrameworkProfile />
     <LangVersion>14</LangVersion>
+    <Cms2021InstallDir>C:\Program Files (x86)\Steam\steamapps\common\Car Mechanic Simulator 2021</Cms2021InstallDir>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -46,8 +47,8 @@
     <DebugType>pdbonly</DebugType>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)' == 'Release-Deploy'">
-    <DoDeploy>true</DoDeploy>
-    <GameModsDir>C:\Program Files (x86)\Steam\steamapps\common\Car Mechanic Simulator 2021\Mods</GameModsDir>   
+    <DoDeploy>true</DoDeploy>    
+    <GameModsDir>$(Cms2021InstallDir)\Mods</GameModsDir>
     <SteamAppId>1190000</SteamAppId>
     <!-- Optional: whether to auto-run after deploy -->
     <AutoRunGame>true</AutoRunGame>
@@ -58,26 +59,26 @@
   <ItemGroup>
     <Reference Include="0Harmony, Version=2.9.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\..\Steam\steamapps\common\Car Mechanic Simulator 2021\MelonLoader\0Harmony.dll</HintPath>
+      <HintPath>$(Cms2021InstallDir)\MelonLoader\0Harmony.dll</HintPath>
     </Reference>
     <Reference Include="Assembly-CSharp, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\..\Steam\steamapps\common\Car Mechanic Simulator 2021\MelonLoader\Managed\Assembly-CSharp.dll</HintPath>
+      <HintPath>$(Cms2021InstallDir)\MelonLoader\Managed\Assembly-CSharp.dll</HintPath>
     </Reference>
     <Reference Include="Assembly-CSharp-firstpass, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\..\..\Steam\steamapps\common\Car Mechanic Simulator 2021\MelonLoader\Managed\Assembly-CSharp-firstpass.dll</HintPath>
+      <HintPath>$(Cms2021InstallDir)\MelonLoader\Managed\Assembly-CSharp-firstpass.dll</HintPath>
     </Reference>
     <Reference Include="Il2Cppmscorlib, Version=4.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\..\Steam\steamapps\common\Car Mechanic Simulator 2021\MelonLoader\Managed\Il2Cppmscorlib.dll</HintPath>
+      <HintPath>$(Cms2021InstallDir)\MelonLoader\Managed\Il2Cppmscorlib.dll</HintPath>
     </Reference>
     <Reference Include="Il2CppSystem">
-      <HintPath>..\..\..\Program Files (x86)\Steam\steamapps\common\Car Mechanic Simulator 2021\MelonLoader\Managed\Il2CppSystem.dll</HintPath>
+      <HintPath>$(Cms2021InstallDir)\MelonLoader\Managed\Il2CppSystem.dll</HintPath>
     </Reference>
     <Reference Include="MelonLoader, Version=0.6.1.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\..\Steam\steamapps\common\Car Mechanic Simulator 2021\MelonLoader\MelonLoader.dll</HintPath>
+      <HintPath>$(Cms2021InstallDir)\MelonLoader\MelonLoader.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Xml.Linq" />
@@ -88,27 +89,27 @@
     <Reference Include="System.Xml" />
     <Reference Include="UnhollowerBaseLib, Version=0.4.18.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\..\Steam\steamapps\common\Car Mechanic Simulator 2021\MelonLoader\Managed\UnhollowerBaseLib.dll</HintPath>
+      <HintPath>$(Cms2021InstallDir)\MelonLoader\Managed\UnhollowerBaseLib.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\..\Steam\steamapps\common\Car Mechanic Simulator 2021\MelonLoader\Managed\UnityEngine.dll</HintPath>
+      <HintPath>$(Cms2021InstallDir)\MelonLoader\Managed\UnityEngine.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\..\Steam\steamapps\common\Car Mechanic Simulator 2021\MelonLoader\Managed\UnityEngine.CoreModule.dll</HintPath>
+      <HintPath>$(Cms2021InstallDir)\MelonLoader\Managed\UnityEngine.CoreModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.InputLegacyModule, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\..\Steam\steamapps\common\Car Mechanic Simulator 2021\MelonLoader\Managed\UnityEngine.InputLegacyModule.dll</HintPath>
+      <HintPath>$(Cms2021InstallDir)\MelonLoader\Managed\UnityEngine.InputLegacyModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.InputModule, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\..\Steam\steamapps\common\Car Mechanic Simulator 2021\MelonLoader\Managed\UnityEngine.InputModule.dll</HintPath>
+      <HintPath>$(Cms2021InstallDir)\MelonLoader\Managed\UnityEngine.InputModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.UI, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\..\Steam\steamapps\common\Car Mechanic Simulator 2021\MelonLoader\Managed\UnityEngine.UI.dll</HintPath>
+      <HintPath>$(Cms2021InstallDir)\MelonLoader\Managed\UnityEngine.UI.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
