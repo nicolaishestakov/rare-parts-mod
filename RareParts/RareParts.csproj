@@ -119,6 +119,7 @@
     <Compile Include="Extensions\ListExtensions.cs" />
     <Compile Include="Extensions\StringExtensions.cs" />
     <Compile Include="Extensions\WarehouseExtensions.cs" />
+    <Compile Include="Logging\MelonLoggerAdapter.cs" />
     <Compile Include="PartsInfo.cs" />
     <Compile Include="Patched.cs" />
     <Compile Include="QolSettings.cs" />
