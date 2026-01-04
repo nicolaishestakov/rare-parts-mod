@@ -905,7 +905,6 @@ namespace RareParts
         private readonly MelonPreferences_Entry<bool> _isEnableAdditionalAuction;
         private readonly MelonPreferences_Entry<bool> _isEnableShopCarParts;
 
-        private readonly MelonPreferences_Entry<string[]> _carNames;
         private readonly MelonPreferences_Entry<string[]> _whiteCarParts;
 
         private readonly MelonPreferences_Entry<string[]> _retroParts;
@@ -931,8 +930,6 @@ namespace RareParts
         public int PricePartsSpecialRetro => _pricePartsSpecialRetro.Value;
         public int PricePartsOther => _pricePartsOther.Value;
 
-
-        public string[] ListCarNames => _carNames.Value;
         public string[] ListRetroParts => _retroParts.Value;
         public string[] WhiteCarParts => _whiteCarParts.Value;
 
@@ -1012,6 +1009,7 @@ namespace RareParts
         /// </summary>
         public bool TransferPartsOnlyAtBarnOrJunkyard => _transferPartsOnlyAtBarnOrJunkyard.Value;
         private readonly MelonPreferences_Entry<bool> _transferPartsOnlyAtBarnOrJunkyard;
+        
         /// <summary>
         /// User setting to select whether the TransferEntire key only moves maps or cases and nothing else.
         /// </summary>
@@ -1023,6 +1021,12 @@ namespace RareParts
         /// </summary>
         public int[] MoveShoppingListWarehouses => _moveShoppingListWarehouses.Value;
         private readonly MelonPreferences_Entry<int[]> _moveShoppingListWarehouses;
+        
+        /// <summary>
+        /// Set to true to enable debugging features like additional logging.
+        /// </summary>
+        public bool IsDebugMode => _isDebugMode.Value;
+        private readonly MelonPreferences_Entry<bool> _isDebugMode;
         
         /// <summary>
         /// Method to change the MinPartCondition setting lower by 10%.
@@ -1067,6 +1071,7 @@ namespace RareParts
             return MinPartCondition;
         }
         
+        
         public Config(string configFilePath)
         {
             _config = CreateCategory(ConfigCategoryName);
@@ -1074,6 +1079,8 @@ namespace RareParts
             _isEnableShop = _config.CreateEntry(nameof(IsEnableShop), false);
             _isEnableAdditionalAuction = _config.CreateEntry(nameof(IsEnableAdditionalAuction), false);
             _isEnableShopCarParts = _config.CreateEntry(nameof(IsEnableShopCarParts), false);
+            _isDebugMode = _config.CreateEntry(nameof(IsDebugMode), false,
+                description: "Set to true to enable debugging features like additional logging.");
 
             var cfgSectionCars = CreateCategory(ConfigCarSection);
             
@@ -1089,10 +1096,6 @@ namespace RareParts
 
             _whiteCarParts = cfgSectionCars.CreateEntry(nameof(WhiteCarParts), DefaultListWhiteCarParts);
             _retroParts = cfgSectionCars.CreateEntry(nameof(ListRetroParts), DefaultRetroParts);
-
-            var cfgSectionRepair = CreateCategory(ConfigRepairSection);
-            
-            _carNames = cfgSectionRepair.CreateEntry(nameof(ListCarNames), DefaultCarNames);
 
             var cfgSectionParts = CreateCategory(CategorySection);
             _retroParts1950_1959 = cfgSectionParts.CreateEntry(nameof(ListRetroParts1950_1959), DefaultRetroParts1950_1959);

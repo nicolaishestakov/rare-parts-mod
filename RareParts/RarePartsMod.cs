@@ -4,6 +4,7 @@ using MelonLoader;
 using System.Collections.Generic;
 using System.Linq;
 using RareParts.Extensions;
+using RareParts.Logging;
 using UnityEngine;
 
 namespace RareParts;
@@ -11,8 +12,9 @@ namespace RareParts;
 public class RarePartsMod : MelonMod
 {
     private Config _config;
+    private ILogger<RarePartsMod> _logger;
     private bool _modIsEnable = true;
-    private bool _isInitialized = true;
+    private bool _isInitialized = true; //todo invert value
 
     private TransferAll _transferAll;
     private TempInventoryManager _tempInventoryManager;
@@ -23,16 +25,24 @@ public class RarePartsMod : MelonMod
     {
         MelonLogger.Msg("initializing...");
 
-
         HarmonyInstance harmony = this.Harmony;
         harmony.PatchAll();
 
         _config = new Config("Mods/RareParts.cfg");
         _config.Reload();
         
-        _tempInventoryManager = new TempInventoryManager();
-        _transferAll = new TransferAll(_config, _tempInventoryManager);
-        _repairScrap = new RepairScrap();
+        #if DEBUG
+        var logLevel = LogLevel.Trace;
+        #else
+        var logLevel = _config.IsDebugMode ? LogLevel.Debug : LogLevel.Information
+        #endif
+        
+        var loggerFactory = new LoggerFactory(logLevel);
+        _logger = loggerFactory.CreateLogger<RarePartsMod>();
+        
+        _tempInventoryManager = new TempInventoryManager(); //todo inject logger
+        _transferAll = new TransferAll(_config, _tempInventoryManager); //todo inject logger
+        _repairScrap = new RepairScrap(); //todo inject logger
     }
 
     public override void OnLateInitializeMelon()
@@ -64,7 +74,7 @@ public class RarePartsMod : MelonMod
             InitAllItems(shopItems);
         });
         
-        MelonLogger.Msg($"{PartsInfo.RareParts.Count} rare parts, {PartsInfo.SpecialRepairableParts.Count} special repairable parts, {PartsInfo.NonRepairableParts.Count} non repairable parts");
+        _logger.Information($"{PartsInfo.RareParts.Count} rare parts, {PartsInfo.SpecialRepairableParts.Count} special repairable parts, {PartsInfo.NonRepairableParts.Count} non repairable parts");
     }
 
     public override void OnUpdate()
@@ -84,17 +94,7 @@ public class RarePartsMod : MelonMod
             
             UIManager.Get().ShowPopup("[RareParts]", message, PopupType.Normal);
 
-            MelonLogger.Msg(message);
-        }
-
-        if (!_modIsEnable)
-        {
-            return;
-        }
-
-        if (Input.GetKeyUp(KeyCode.F6)) //todo key to config
-        {
-            MelonLogger.Msg($"Command: Move Shopping List from Warehouse to Inventory");
+            _logger.Information($"Command: Move Shopping List from Warehouse to Inventory");
             _transferAll.MoveShoppingListFromWarehouseToInventory(!IsShiftPressed(), _config.MinPartCondition);
         }
 
@@ -161,14 +161,14 @@ public class RarePartsMod : MelonMod
     }
 
     
-    private static void RemoveRarePartFromShops(PartProperty part, int priceMultiplier)
+    private void RemoveRarePartFromShops(PartProperty part, int priceMultiplier)
     {
         part.Price *= priceMultiplier;
         part.ShopName = "none";
 
         if (!PartsInfo.RareParts.Add(part.ID))
         {
-            MelonLogger.Msg($"Part {part.ID} overrides already declared with price multiplier: {priceMultiplier}");
+            _logger.Information($"Part {part.ID} overrides already declared with price multiplier: {priceMultiplier}");
         }
         
         if (part.RepairGroup == 0)
@@ -178,7 +178,7 @@ public class RarePartsMod : MelonMod
         }
     }
 
-    private static bool TryRemoveRarePartFromShops(PartProperty part, IReadOnlyDictionary<string, int> rareParts)
+    private bool TryRemoveRarePartFromShops(PartProperty part, IReadOnlyDictionary<string, int> rareParts)
     {
         // todo check for white list
         
@@ -189,7 +189,7 @@ public class RarePartsMod : MelonMod
         }
         else if (rareParts.TryGetValue(part.CarID, out priceMultiplier))
         {
-            //MelonLogger.Msg($"Disabling part {part.ID} by car {part.CarID}");
+            _logger.Trace($"Disabling part {part.ID} by car {part.CarID}");
             RemoveRarePartFromShops(part, priceMultiplier);
             return true;
         }
@@ -237,7 +237,8 @@ public class RarePartsMod : MelonMod
         
         foreach (var item in items)
         {
-            //MelonLogger.Msg($"Item {item.ID} aka \"{item.LocalizedName}\" repair group: {item.RepairGroup}, shop: {item.ShopGroup}/{item.ShopName}, car: {item.CarID}, part group: {item.PartGroup}");
+            // if you want to log all the parts in the game:
+            //_logger.Debug($"Item {item.ID} aka \"{item.LocalizedName}\" repair group: {item.RepairGroup}, shop: {item.ShopGroup}/{item.ShopName}, car: {item.CarID}, part group: {item.PartGroup}");
 
             if (TryRemoveRarePartFromShops(item, rareParts))
             {
@@ -246,7 +247,7 @@ public class RarePartsMod : MelonMod
 
             if (item.LocalizedName.ContainsAny(_config.ListRetroParts)) 
             {
-                MelonLogger.Msg($"Item {item.ID} aka \"{item.LocalizedName}\" disabled by localized name from ListRetroParts");
+                _logger.Information($"Item {item.ID} aka \"{item.LocalizedName}\" disabled by localized name from ListRetroParts");
                 RemoveRarePartFromShops(item, _config.PricePartsOther);
                 continue;
             }
@@ -268,20 +269,17 @@ public class RarePartsMod : MelonMod
 
     public override void OnSceneWasLoaded(int buildIndex, string sceneName)
     {
-        GameSettings.CanShowPopups = true;
-
-        var gameSettingData = GameSettings.GameSettingsData;
-        gameSettingData.Init();
-
-        if (buildIndex == 1)
         {
-            var buildVersion = GameSettings.BuildVersion;
+            //todo not quite sure what this is for
+            GameSettings.CanShowPopups = true;
 
-            MelonLogger.Msg($"GameSettings.BuildVersion = {buildVersion} ");
+            var gameSettingData = GameSettings.GameSettingsData;
+            gameSettingData.Init();
         }
-
+        
         if (buildIndex == 10 && _isInitialized)
         {
+            _logger.Debug($"Initialization at scene {sceneName}. Game version: {GameSettings.BuildVersion}");
             GlobalInits();
 
             _isInitialized = false;
