@@ -15,6 +15,8 @@
     <TargetFrameworkProfile />
     <LangVersion>14</LangVersion>
     <Cms2021InstallDir>C:\Program Files (x86)\Steam\steamapps\common\Car Mechanic Simulator 2021</Cms2021InstallDir>
+    <SteamAppId>1190000</SteamAppId>
+    <GameModsDir>$(Cms2021InstallDir)\Mods</GameModsDir>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -47,9 +49,7 @@
     <DebugType>pdbonly</DebugType>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)' == 'Release-Deploy'">
-    <DoDeploy>true</DoDeploy>    
-    <GameModsDir>$(Cms2021InstallDir)\Mods</GameModsDir>
-    <SteamAppId>1190000</SteamAppId>
+    <DoDeploy>true</DoDeploy>
     <!-- Optional: whether to auto-run after deploy -->
     <AutoRunGame>true</AutoRunGame>
   </PropertyGroup>  
