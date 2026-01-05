@@ -34,7 +34,7 @@ public class RarePartsMod : MelonMod
         #if DEBUG
         var logLevel = LogLevel.Trace;
         #else
-        var logLevel = _config.IsDebugMode ? LogLevel.Debug : LogLevel.Information
+        var logLevel = _config.IsDebugMode ? LogLevel.Debug : LogLevel.Information;
         #endif
         
         var loggerFactory = new LoggerFactory(logLevel);
@@ -91,9 +91,17 @@ public class RarePartsMod : MelonMod
             }
 
             var message = _modIsEnable ? "the mod is enabled" : "the mod is disabled";
-            
-            UIManager.Get().ShowPopup("[RareParts]", message, PopupType.Normal);
 
+            UIManager.Get().ShowPopup("Rare Parts Mod", message, PopupType.Normal);
+        }
+        
+        if (!_modIsEnable)
+        {
+            return;
+        }
+        
+        if (Input.GetKeyUp(KeyCode.F6)) //todo key to config
+        {
             _logger.Information($"Command: Move Shopping List from Warehouse to Inventory");
             _transferAll.MoveShoppingListFromWarehouseToInventory(!IsShiftPressed(), _config.MinPartCondition);
         }
