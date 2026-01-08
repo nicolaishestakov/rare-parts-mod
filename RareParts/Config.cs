@@ -71,7 +71,7 @@ namespace RareParts
     
     public class Config : ITransferAllConfig
     {
-        private static string[] DefaultListWhiteCarParts =
+        private static readonly string[] DefaultListWhiteCarParts =
         [
             // todo use part codes instead
             "I4 DT224", "I4 204PT", "V8 AJ133", "V8 392 Hemi", "V10 OHV MT8", "V10 OHV", "V12 AM11", "B6 MA", "B6 M64", "eDen-1H",
@@ -82,12 +82,14 @@ namespace RareParts
             "SVR", "Town", "Tyro", "Urs"
         ];
 
-        private static string[] DefaultRetroParts = [];
+        private static readonly string[] DefaultRetroParts = [];
 
         // Default warehouses to use when moving Shopping List items
-        private static int[] DefaultMoveShoppingListWarehouses = [1, 2];
+        private static readonly int[] DefaultMoveShoppingListWarehouses = [1, 2];
 
-        private static string[] DefaultRetroParts1950_1959 = [
+        // ReSharper disable InconsistentNaming
+        
+        private static readonly string[] DefaultRetroParts1950_1959 = [
             // DELRAY CUSTOM (1957)
             "car_delraycustom", 
 
@@ -125,7 +127,7 @@ namespace RareParts
             "t_v12_kolektor_dolotowy", "t_v12_kolektor_wydechowy_3", "t_v12_walek_rozrzadu_2", "t_v12_gearbox", "t_v12_gearbox_2",
         ];
 
-        private static string[] DefaultRetroParts1960_1969 = [
+        private static readonly string[] DefaultRetroParts1960_1969 = [
             "car_skostovka",
             
             // Fairlady Z (S30) 1969
@@ -266,7 +268,7 @@ namespace RareParts
 
         ];
 
-        private static string[] DefaultRetroParts1970_1979 = [
+        private static readonly string[] DefaultRetroParts1970_1979 = [
             // Smith&Parker Arizona Kid Supercharged ???
             // https://car-mechanic-simulator-2021.fandom.com/wiki/Smith%26Parker_Arizona_Kid_Supercharged
 
@@ -396,7 +398,7 @@ namespace RareParts
             "t_r6_m88_gearbox", "r6_m88_kable", "r6_m88_kopulkaRozdzielacza", "r6_m88_rozdzielaczZaplonu_1",
         ];
 
-        private static string[] DefaultRetroParts1980_1990 = [
+        private static readonly string[] DefaultRetroParts1980_1990 = [
             // SMITH&PARKER ROADSTER (1980)
             "car_smithandparkerroadster", 
 
@@ -501,7 +503,7 @@ namespace RareParts
 
         ];
 
-        private static string[] DefaultRetroParts1991_2000 = [
+        private static readonly string[] DefaultRetroParts1991_2000 = [
             "car_morenabizzarini",
             // YUNBAO YILONG (1992)
             "car_yunbaoyilong",
@@ -648,7 +650,7 @@ namespace RareParts
             "t_w_r6_2jz_wydech_poczatkowy_h1", "t_w_r6_2jz_wydech_poczatkowy", "t_r6_2jz_kolektor_dolotowy",
         ];
 
-        private static string[] DefaultRetroParts2001_2005 = [
+        private static readonly string[] DefaultRetroParts2001_2005 = [
             // CHRYSLER 300C SRT8
             "car_chrysler300csrt8", "w_v8_61hemi_poczatkowy_chrysler300c", "w_v8_61hemi_koncowy__chrysler300c", "seat_300c",
             "steering_wheel_300c", "bench_300c", "t_w_v8_61hemi_poczatkowy_chrysler300c", "t_w_v8_61hemi_koncowy__chrysler300c", "rim_300c",
@@ -723,7 +725,7 @@ namespace RareParts
 
         ];
 
-        private static string[] DefaultSportGT = [
+        private static readonly string[] DefaultSportGT = [
             // PAGANI ZONDA REVOLUTION
             "car_paganizondarevolucion", "v12_zonda_gearbox", "v12_zonda_kolektor_dolotowy", "v12_zonda_kolektor_wydechowy_1", "v12_zonda_kolektor_wydechowy_2",
             "v12_zonda_listwa_wtryskowa", "v12_zonda_pokrywa_glowicy_1", "v12_zonda_pokrywa_glowicy_1_2", "v12_zonda_pokrywa_glowicy_2", "v12_zonda_pokrywa_glowicy_2_2",
@@ -785,7 +787,7 @@ namespace RareParts
 
         ];
 
-        private static string[] DefaultSpecialRetro = [
+        private static readonly string[] DefaultSpecialRetro = [
             "car_35fordtruck", 
             "car_fordf501946", 
             "car_hudson52", 
@@ -859,34 +861,17 @@ namespace RareParts
             "steering_wheel1", "steering_wheel3", "steering_wheel4", "steering_wheel5", "steering_wheel6", "steering_wheel7", "steering_wheel8", "steering_wheel9",
             "steering_wheel10", "steering_wheel11", "steering_wheel12", "steering_wheel13", "steering_wheel14", "steering_wheel15", "steering_wheel16", "steering_wheel17",
         ];
-
-        private static string[] DefaultCarNames = [
-            "Aston Martin DBS", "Aston Martin DBX", "Aston Martin Vantage", "Atom 330", "Atom Renton", "Autotutto Lavetino",
-            "Bolt Mosquito MK5", "Bolt Mosquito MK6", "Bolt Reptilia R6", "Bolthorn Grand Mojave", "Castor Avalanche",
-            "Dodge Challenger SRT Hellcat Widebody", "Dodge Challenger SRT Hellcat", "Dodge Viper GTS", "Echos Cobra",
-            "Echos Imperator", "Elenti Izi", "Emden Lotz", "FMW Roadster", "Ford F350 Super Duty", "Ford Mustang",
-            "Griffin Tyro", "Hammerdal Strale S", "Hinata Moon MK2", "Jaguar F-Type", "Lacroix Fret",
-            "Land Rover Defender 90", "Land Rover Discovery", "Land Rover Range Rover Evoque", "Land Rover Range Rover Sport SVR",
-            "Mayen M3", "Mayen T8", "Mercedes-Benz SLS AMG", "Mioveni Urs", "Nissan 370z Nismo", "Nissan GT-R (R35)",
-            "Olsen Grand Club", "Olsen GTR", "Pagani Huayra Tempesta", "Pagani Huayra", "Pagani Zonda Revolucion",
-            "Porsche 911 Carrera 4S (991)", "Rino Bianco", "Rino Piccolo", "Royale Town", "Royale Crown",
-            "Sakura Yaro", "Salem Earthquake Rex", "Salem Earthquake", "Salem GW500", "Salem Spectre"
-        ];
-
+        
         private const int DefaultValuePriceParts1950_1959 = 30;
         private const int DefaultValuePriceParts1960_1969 = 24;
         private const int DefaultValuePriceParts1970_1979 = 20;
         private const int DefaultValuePriceParts1980_1990 = 17;
         private const int DefaultValuePriceParts1991_2000 = 14;
         private const int DefaultValuePriceParts2001_2005 = 10;
+        
         private const int DefaultValuePriceSportGT = 22;
         private const int DefaultValuePriceSpecialRetro = 50;
         private const int DefaultValuePriceOther = 5;
-
-        private const string ConfigCategoryName = "MainSection";
-        private const string ConfigCarSection = "CarSection";
-        private const string ConfigRepairSection = "RepairSection";
-        private const string CategorySection = "Category";
 
         private readonly MelonPreferences_Category _config;
         private readonly MelonPreferences_Entry<KeyCode> _isKeyBindEnableSwitchMode;
@@ -947,12 +932,9 @@ namespace RareParts
         public string[] ListSportGT => _sportGT.Value;
         public string[] ListSpecialRetro => _specialRetro.Value;
 
-        // TransferAll configs
+        // ReSharper restore InconsistentNaming
         
-        /// <summary>
-        /// Settings Category
-        /// </summary>
-        private const string TransferAllSection = "TransferAll";
+        // TransferAll configs
         /// <summary>
         /// User setting for the key to transfer the Inventory/Warehouse/Junk items.
         /// </summary>
@@ -1074,7 +1056,7 @@ namespace RareParts
         
         public Config(string configFilePath)
         {
-            _config = CreateCategory(ConfigCategoryName);
+            _config = CreateCategory("MainSection");
             _isKeyBindEnableSwitchMode = _config.CreateEntry(nameof(IsKeyBindEnableSwitchMode), KeyCode.F9);
             _isEnableShop = _config.CreateEntry(nameof(IsEnableShop), false);
             _isEnableAdditionalAuction = _config.CreateEntry(nameof(IsEnableAdditionalAuction), false);
@@ -1082,7 +1064,7 @@ namespace RareParts
             _isDebugMode = _config.CreateEntry(nameof(IsDebugMode), false,
                 description: "Set to true to enable debugging features like additional logging.");
 
-            var cfgSectionCars = CreateCategory(ConfigCarSection);
+            var cfgSectionCars = CreateCategory("CarSection");
             
             _priceParts1950_1959 = cfgSectionCars.CreateEntry(nameof(PriceParts1950_1959), DefaultValuePriceParts1950_1959);
             _priceParts1960_1969 = cfgSectionCars.CreateEntry(nameof(PriceParts1960_1969), DefaultValuePriceParts1960_1969);
@@ -1097,7 +1079,7 @@ namespace RareParts
             _whiteCarParts = cfgSectionCars.CreateEntry(nameof(WhiteCarParts), DefaultListWhiteCarParts);
             _retroParts = cfgSectionCars.CreateEntry(nameof(ListRetroParts), DefaultRetroParts);
 
-            var cfgSectionParts = CreateCategory(CategorySection);
+            var cfgSectionParts = CreateCategory("Category");
             _retroParts1950_1959 = cfgSectionParts.CreateEntry(nameof(ListRetroParts1950_1959), DefaultRetroParts1950_1959);
             _retroParts1960_1969 = cfgSectionParts.CreateEntry(nameof(ListRetroParts1960_1969), DefaultRetroParts1960_1969);
             _retroParts1970_1979 = cfgSectionParts.CreateEntry(nameof(ListRetroParts1970_1979), DefaultRetroParts1970_1979);
@@ -1109,7 +1091,7 @@ namespace RareParts
             _specialRetro = cfgSectionParts.CreateEntry(nameof(ListSpecialRetro), DefaultSpecialRetro);
             
             // TransferAll configs
-            var settings = CreateCategory(TransferAllSection);
+            var settings = CreateCategory("TransferAll");
             
             _transferAllBindKey = settings.CreateEntry(nameof(TransferAllItemsAndGroups), KeyCode.K, 
                 description: "https://docs.unity3d.com/ScriptReference/KeyCode.html for KeyCodes." + Il2CppSystem.Environment.NewLine + "Press This Key to transfer all current items and groups.");
