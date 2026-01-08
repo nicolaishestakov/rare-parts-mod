@@ -8,12 +8,12 @@ namespace RareParts
         /// <summary>
         /// User setting for the key to transfer the Inventory/Warehouse/Junk items.
         /// </summary>
-        KeyCode TransferAllItemsAndGroups { get; }
+        KeyCode TransferAllItemsAndGroupsKey { get; }
     
         /// <summary>
         /// User setting for the key to transfer all the junk from the Barn or Junkyard.
         /// </summary>
-        KeyCode TransferEntireJunkyardOrBarn { get; }
+        KeyCode TransferEntireJunkyardOrBarnKey { get; }
         
         /// <summary>
         /// User setting for the key to set the condition of parts percentage lower by 10%.
@@ -23,12 +23,12 @@ namespace RareParts
         /// <summary>
         /// User setting for the key to set the condition of parts percentage higher by 10%.
         /// </summary>
-        KeyCode SetPartConditionHigher { get; }
+        KeyCode SetPartConditionHigherKey { get; }
         
         /// <summary>
         /// User setting for the key to switch between the ByCondition/SkipUnrepairable/OnlyRareRepairable modes.
         /// </summary>
-        KeyCode SwitchMode { get; }
+        KeyCode SwitchModeKey { get; }
         
         /// <summary>
         /// User setting for the minimum part condition to transfer.
@@ -874,7 +874,6 @@ namespace RareParts
         private const int DefaultValuePriceOther = 5;
 
         private readonly MelonPreferences_Category _config;
-        private readonly MelonPreferences_Entry<KeyCode> _isKeyBindEnableSwitchMode;
         
         private readonly MelonPreferences_Entry<int> _priceParts1950_1959;
         private readonly MelonPreferences_Entry<int> _priceParts1960_1969;
@@ -888,7 +887,6 @@ namespace RareParts
 
         private readonly MelonPreferences_Entry<bool> _isEnableShop;
         private readonly MelonPreferences_Entry<bool> _isEnableAdditionalAuction;
-        private readonly MelonPreferences_Entry<bool> _isEnableShopCarParts;
 
         private readonly MelonPreferences_Entry<string[]> _whiteCarParts;
 
@@ -902,8 +900,6 @@ namespace RareParts
         private readonly MelonPreferences_Entry<string[]> _retroParts2001_2005;
         private readonly MelonPreferences_Entry<string[]> _sportGT;
         private readonly MelonPreferences_Entry<string[]> _specialRetro;
-
-        public KeyCode IsKeyBindEnableSwitchMode => _isKeyBindEnableSwitchMode.Value;
         
         public int PriceParts1950_1959 => _priceParts1950_1959.Value;
         public int PriceParts1960_1969 => _priceParts1960_1969.Value;
@@ -920,7 +916,6 @@ namespace RareParts
 
         public bool IsEnableShop => _isEnableShop.Value;
         public bool IsEnableAdditionalAuction => _isEnableAdditionalAuction.Value;
-        public bool IsEnableShopCarParts => _isEnableShopCarParts.Value;
 
 
         public string[] ListRetroParts1950_1959 => _retroParts1950_1959.Value;
@@ -938,31 +933,34 @@ namespace RareParts
         /// <summary>
         /// User setting for the key to transfer the Inventory/Warehouse/Junk items.
         /// </summary>
-        public KeyCode TransferAllItemsAndGroups => _transferAllBindKey.Value;
-        private readonly MelonPreferences_Entry<KeyCode> _transferAllBindKey;
+        public KeyCode TransferAllItemsAndGroupsKey => _transferAllItemsAndGroupsKey.Value;
+        private readonly MelonPreferences_Entry<KeyCode> _transferAllItemsAndGroupsKey;
+        
         /// <summary>
         /// User setting for the key to transfer all the junk from the Barn or Junkyard.
         /// </summary>
-        public KeyCode TransferEntireJunkyardOrBarn => _transferEntireBindKey.Value;
-        private readonly MelonPreferences_Entry<KeyCode> _transferEntireBindKey;
+        public KeyCode TransferEntireJunkyardOrBarnKey => _transferEntireJunkyardOrBarnKey.Value;
+        private readonly MelonPreferences_Entry<KeyCode> _transferEntireJunkyardOrBarnKey;
+        
         /// <summary>
         /// User setting for the key to set the condition of parts percentage lower by 10%.
         /// </summary>
         public KeyCode SetPartConditionLower => _setPartConditionLower.Value;
         private readonly MelonPreferences_Entry<KeyCode> _setPartConditionLower;
+        
         /// <summary>
         /// User setting for the key to set the condition of parts percentage higher by 10%.
         /// </summary>
-        public KeyCode SetPartConditionHigher => _setPartConditionHigher.Value;
-        private readonly MelonPreferences_Entry<KeyCode> _setPartConditionHigher;
+        public KeyCode SetPartConditionHigherKey => _setPartConditionHigherKey.Value;
+        private readonly MelonPreferences_Entry<KeyCode> _setPartConditionHigherKey;
         
         /// <summary>
         /// User setting for the key to switch between the ByCondition/SkipUnrepairable/OnlyRareRepairable modes.
         /// </summary>
-        public KeyCode SwitchMode => _switchMode.Value;
-        private readonly MelonPreferences_Entry<KeyCode> _switchMode;
+        public KeyCode SwitchModeKey => _switchModeKey.Value;
+        private readonly MelonPreferences_Entry<KeyCode> _switchModeKey;
 
-        public KeyCode ScrapRepair => KeyCode.R;
+        public KeyCode ScrapRepairKey => KeyCode.R;
         
         /// <summary>
         /// User setting for the minimum part condition to transfer.
@@ -1057,10 +1055,8 @@ namespace RareParts
         public Config(string configFilePath)
         {
             _config = CreateCategory("MainSection");
-            _isKeyBindEnableSwitchMode = _config.CreateEntry(nameof(IsKeyBindEnableSwitchMode), KeyCode.F9);
             _isEnableShop = _config.CreateEntry(nameof(IsEnableShop), false);
             _isEnableAdditionalAuction = _config.CreateEntry(nameof(IsEnableAdditionalAuction), false);
-            _isEnableShopCarParts = _config.CreateEntry(nameof(IsEnableShopCarParts), false);
             _isDebugMode = _config.CreateEntry(nameof(IsDebugMode), false,
                 description: "Set to true to enable debugging features like additional logging.");
 
@@ -1093,13 +1089,13 @@ namespace RareParts
             // TransferAll configs
             var settings = CreateCategory("TransferAll");
             
-            _transferAllBindKey = settings.CreateEntry(nameof(TransferAllItemsAndGroups), KeyCode.K, 
+            _transferAllItemsAndGroupsKey = settings.CreateEntry(nameof(TransferAllItemsAndGroupsKey), KeyCode.K, 
                 description: "https://docs.unity3d.com/ScriptReference/KeyCode.html for KeyCodes." + Il2CppSystem.Environment.NewLine + "Press This Key to transfer all current items and groups.");
-            _transferEntireBindKey = settings.CreateEntry(nameof(TransferEntireJunkyardOrBarn), KeyCode.L,
+            _transferEntireJunkyardOrBarnKey = settings.CreateEntry(nameof(TransferEntireJunkyardOrBarnKey), KeyCode.L,
                 description: "ONLY WORKS AT BARN AND JUNKYARD." + Il2CppSystem.Environment.NewLine + "Press This Key to transfer all items and groups from ALL junk stashes.");
             _setPartConditionLower = settings.CreateEntry(nameof(SetPartConditionLower), KeyCode.Minus,
                 description: "Press This Key to set the condition percentage lower by 10%." + Il2CppSystem.Environment.NewLine + "This value is saved to MinPartCondition value below on exit.");
-            _setPartConditionHigher = settings.CreateEntry(nameof(SetPartConditionHigher), KeyCode.Equals,
+            _setPartConditionHigherKey = settings.CreateEntry(nameof(SetPartConditionHigherKey), KeyCode.Equals,
                 description: "Press This Key to set the condition percentage higher by 10%." + Il2CppSystem.Environment.NewLine + "This value is saved to MinPartCondition value below on exit.");
             _minPartCondition = settings.CreateEntry(nameof(MinPartCondition), 0,
                 description: "This value will transfer parts with a condition equal to and above this number." + Il2CppSystem.Environment.NewLine + "SET TO 0 TO TRANSFER EVERYTHING.");
@@ -1111,7 +1107,7 @@ namespace RareParts
                 description: "Set this to true and only non-body parts are moved to the Shopping Cart in the Barn/Junkyard.");
             _transferMapsOrCasesOnlyAtBarnOrJunkyard = settings.CreateEntry(nameof(TransferMapsOrCasesOnlyAtBarnOrJunkyard), false,
                 description: "Set this to true and only maps or cases are moved to the Shopping Cart in the Barn/Junkyard." + Il2CppSystem.Environment.NewLine + "THIS OVERRIDES THE TransferPartsOnlyAtBarnOrJunkyard SETTING ABOVE.");
-            _switchMode = settings.CreateEntry(nameof(SwitchMode), KeyCode.KeypadMultiply,
+            _switchModeKey = settings.CreateEntry(nameof(SwitchModeKey), KeyCode.KeypadMultiply,
                 description: "Press the key to switch between the By Condition/Skip Unrepairable/Only Rare Repairable modes.");
             _moveShoppingListWarehouses = settings.CreateEntry(nameof(MoveShoppingListWarehouses), DefaultMoveShoppingListWarehouses,
                 description: "Warehouses IDs to move Shopping List items to (comma-separated). Default: 1,2");
@@ -1126,7 +1122,7 @@ namespace RareParts
             }
         }
 
-        public void Reload()
+        public void Reload() //todo reloads only main category?
         {
             _config.LoadFromFile();
         }

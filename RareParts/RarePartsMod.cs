@@ -13,7 +13,6 @@ public class RarePartsMod : MelonMod
 {
     private Config _config;
     private ILogger<RarePartsMod> _logger;
-    private bool _modIsEnable = true;
     private bool _isInitialized = true; //todo invert value
 
     private TransferAll _transferAll;
@@ -79,27 +78,6 @@ public class RarePartsMod : MelonMod
 
     public override void OnUpdate()
     {
-        if (Input.GetKeyDown(_config.IsKeyBindEnableSwitchMode))
-        {
-            if (_modIsEnable)
-            {
-                _modIsEnable = false;
-            }
-            else
-            {
-                _modIsEnable = true;
-            }
-
-            var message = _modIsEnable ? "the mod is enabled" : "the mod is disabled";
-
-            UIManager.Get().ShowPopup("Rare Parts Mod", message, PopupType.Normal);
-        }
-        
-        if (!_modIsEnable)
-        {
-            return;
-        }
-        
         if (Input.GetKeyUp(KeyCode.F6)) //todo key to config
         {
             _logger.Information($"Command: Move Shopping List from Warehouse to Inventory");
@@ -118,22 +96,22 @@ public class RarePartsMod : MelonMod
             _tempInventoryManager.LogState();
         }
         
-        if (Input.GetKeyUp(_config.ScrapRepair))
+        if (Input.GetKeyUp(_config.ScrapRepairKey))
         {
             _repairScrap.Repair();
         }
         
-        if (Input.GetKeyUp(_config.TransferAllItemsAndGroups))
+        if (Input.GetKeyUp(_config.TransferAllItemsAndGroupsKey))
         {
             _transferAll.TransferAllItemsAndGroups(IsShiftPressed());
         }
 
-        if (Input.GetKeyUp(_config.TransferEntireJunkyardOrBarn))
+        if (Input.GetKeyUp(_config.TransferEntireJunkyardOrBarnKey))
         {
             _transferAll.TransferEntireJunkyardOrBarn(IsShiftPressed());
         }
 
-        if (Input.GetKeyUp(_config.SwitchMode))
+        if (Input.GetKeyUp(_config.SwitchModeKey))
         {
             _transferAll.SwitchTransferMode();
         }
@@ -144,7 +122,7 @@ public class RarePartsMod : MelonMod
             _transferAll.OnMinPartConditionChanged();
         }
 
-        if (Input.GetKeyUp(_config.SetPartConditionHigher))
+        if (Input.GetKeyUp(_config.SetPartConditionHigherKey))
         {
             _config.SetPartConditionHigherBy10();
             _transferAll.OnMinPartConditionChanged();
