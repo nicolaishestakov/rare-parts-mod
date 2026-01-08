@@ -960,7 +960,11 @@ namespace RareParts
         public KeyCode SwitchModeKey => _switchModeKey.Value;
         private readonly MelonPreferences_Entry<KeyCode> _switchModeKey;
 
-        public KeyCode ScrapRepairKey => KeyCode.R;
+        public KeyCode ScrapRepairKey => _scrapRepairKey.Value;
+        private readonly MelonPreferences_Entry<KeyCode> _scrapRepairKey;
+        
+        public KeyCode MoveShoppingListToInventoryKey => _moveShoppingListToInventoryKey.Value;
+        private readonly MelonPreferences_Entry<KeyCode> _moveShoppingListToInventoryKey;
         
         /// <summary>
         /// User setting for the minimum part condition to transfer.
@@ -1111,6 +1115,10 @@ namespace RareParts
                 description: "Press the key to switch between the By Condition/Skip Unrepairable/Only Rare Repairable modes.");
             _moveShoppingListWarehouses = settings.CreateEntry(nameof(MoveShoppingListWarehouses), DefaultMoveShoppingListWarehouses,
                 description: "Warehouses IDs to move Shopping List items to (comma-separated). Default: 1,2");
+            _scrapRepairKey = settings.CreateEntry(nameof(ScrapRepairKey), KeyCode.R,
+                description: "Press this key to scrap-repair available identical parts. Works inside the scrapping workshop on the upgrade tab.");
+            _moveShoppingListToInventoryKey = settings.CreateEntry(nameof(MoveShoppingListToInventoryKey), KeyCode.F6,
+                description: "Press this key to search and move Shopping List items from Warehouse(s) to Inventory. The items found and moved are removed from the Shopping List, unless pressed with the shift key.");
             
             
             // local functions

@@ -78,29 +78,34 @@ public class RarePartsMod : MelonMod
 
     public override void OnUpdate()
     {
-        if (Input.GetKeyUp(KeyCode.F6)) //todo key to config
+#if !DEBUG
+        if (_config.IsDebugMode)
+#endif
+        {
+            if (Input.GetKeyUp(KeyCode.Keypad1))
+            {
+                Debug.LogWarehouseItems();
+            }
+
+            if (Input.GetKeyUp(KeyCode.F11))
+            {
+                Debug.LogWindowsState();
+                Debug.LogInventoryState();
+                _tempInventoryManager.LogState();
+            }
+        }
+
+        if (Input.GetKeyUp(_config.MoveShoppingListToInventoryKey))
         {
             _logger.Information($"Command: Move Shopping List from Warehouse to Inventory");
             _transferAll.MoveShoppingListFromWarehouseToInventory(!IsShiftPressed(), _config.MinPartCondition);
         }
 
-        if (Input.GetKeyUp(KeyCode.Keypad1))
-        {
-            Debug.LogWarehouseItems();
-        }
-
-        if (Input.GetKeyUp(KeyCode.F11))
-        {
-            Debug.LogWindowsState();
-            Debug.LogInventoryState();
-            _tempInventoryManager.LogState();
-        }
-        
         if (Input.GetKeyUp(_config.ScrapRepairKey))
         {
             _repairScrap.Repair();
         }
-        
+
         if (Input.GetKeyUp(_config.TransferAllItemsAndGroupsKey))
         {
             _transferAll.TransferAllItemsAndGroups(IsShiftPressed());
@@ -115,7 +120,7 @@ public class RarePartsMod : MelonMod
         {
             _transferAll.SwitchTransferMode();
         }
-        
+
         if (Input.GetKeyUp(_config.SetPartConditionLower))
         {
             _config.SetPartConditionLowerBy10();
@@ -132,7 +137,7 @@ public class RarePartsMod : MelonMod
 
         bool IsShiftPressed() => Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
     }
-    
+
     private void UpdateButtonsState()
     {
         if (!_config.IsEnableShop)
