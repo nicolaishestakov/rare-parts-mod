@@ -978,11 +978,7 @@ public class TransferAll
     private void MoveEntireBarnOrJunkyard(HashSet<string> includeShopListItems, bool onlyShopListItems)
     {
         MelonLogger.Msg($"MoveEntireBarnOrJunkyard, including seeking for {includeShopListItems.Count} shop list items");
-
-        var gameManager = Singleton<GameManager>.Instance;
-        var profileManager = Singleton<ProfileManager>.Instance;
-        var profileData = profileManager.GetSelectedProfileData();
-
+        
         var itemsExchangeWindow = GetItemsExchangeWindow(true);
         var inventoryWindow = GetInventoryWindow(true);
 

@@ -1,9 +1,10 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using CMS.UI;
 using CMS.UI.Windows;
-using Il2CppSystem;
+using JetBrains.Annotations;
 using MelonLoader;
 using RareParts.Extensions;
 
@@ -17,15 +18,10 @@ public class RepairScrap
 
         if (scrapWindow is null)
         {
-            MelonLogger.Msg($"Scrap window is not active, exiting repair.");
+            MelonLogger.Msg("Scrap window is not active, exiting repair.");
             return;
         }
-        else if (scrapWindow.topMenu.currentSelected != 1) // upgrade menu 
-        {
-            MelonLogger.Msg($"Scrap window upgrade tab is not active, exiting repair.");
-            return;
-        }
-
+        
         var inventory = Singleton<Inventory>.Instance;
         RepairFromInventory(inventory, scrapWindow);
     }
@@ -44,7 +40,15 @@ public class RepairScrap
     
     public void RepairFromInventory(Inventory inventory, ScrapWindow scrapWindow)
     {
-        var repairableItems = GetRepairableItems(inventory);
+        var currentItem = GetCurrentItem(scrapWindow); // if an item is selected, it has priority to repair
+
+        if (currentItem is not null)
+        {
+            MelonLogger.Msg("Currently selected item:");
+            Debug.LogItemState(currentItem);
+        }
+        
+        var repairableItems = GetRepairableItems(inventory, currentItem?.ID);
         var uiManager = UIManager.Get();
         
         if (repairableItems.Count < 2)
@@ -53,13 +57,19 @@ public class RepairScrap
             return;
         }
         
-        MelonLogger.Msg($"Items to scrap-repair:");
+        MelonLogger.Msg("Items to scrap-repair:");
         foreach (var item in repairableItems)
         {
             Debug.LogItemState(item);
         }
         
-        var chosenItem = repairableItems.OrderByDescending(x => x.Quality).First();
+        repairableItems = repairableItems
+            .OrderBy(x => x.UID == currentItem?.UID ? 0 : 1) // if an item is selected, it will be taken as primary and will keep additional properties like quality or wheel size
+            .ThenByDescending(x => x.Quality)
+            .ToList();
+        
+        var chosenItem = repairableItems[0];
+        
         var repairedCondition = GetRepairedCondition(repairableItems.Select(x => x.Condition));
 
         var description = new StringBuilder();
@@ -74,7 +84,7 @@ public class RepairScrap
 
         description.Append($" to one {ConditionToPercent(repairedCondition)} part.");
 
-        var repairAction = new System.Action<bool>(confirmed =>
+        var repairAction = new Action<bool>(confirmed =>
         {
             if (!confirmed)
             {
@@ -91,11 +101,16 @@ public class RepairScrap
 
             uiManager.ShowPopup("SCRAP-REPAIR",
                 $"{chosenItem.GetLocalizedName()} repaired from {repairableItems.Count} parts to {ConditionToPercent(chosenItem.Condition)}.", PopupType.Normal);
-            
-            scrapWindow.scrapUpgrade.UpdateItems();
+
+            scrapWindow.choosePartDownWindow?.Refresh();
         });
         
         uiManager.ShowAskWindow("SCRAP-REPAIR ITEMS", description.ToString(), repairAction);
+    }
+
+    private static BaseItem GetCurrentItem(ScrapWindow scrapWindow)
+    {
+        return scrapWindow.choosePartDownWindow?.GetCurrentItem(out var _)?.BaseItem;
     }
 
     private static string ConditionToPercent(float condition) => $"{(int)(condition * 100)}%";
@@ -112,14 +127,15 @@ public class RepairScrap
         return 1 - q;
     }
 
-    private List<Item> GetRepairableItems(Inventory inventory)
+    private List<Item> GetRepairableItems(Inventory inventory, string priorId)
     {
         var itemsGroup = inventory.items.ToEnumerable()
             .GroupBy(x => x.ID)
-            .OrderByDescending(x => x.Count())
+            .OrderBy(x => x.Key == priorId? 0 : 1)
+            .ThenByDescending(x => x.Count())
             .ThenBy(x => x.Sum(y => y.Condition))
             .Select(x => FilterOptimalItems(x.ToList()))
-            .FirstOrDefault();
+            .FirstOrDefault(x => x.Count > 1);
 
         return itemsGroup ?? [];
     }
@@ -184,30 +200,32 @@ public class RepairScrap
         // Dynamic Programming approach via log-transform:
         // Let w_i = -ln(d_i) (>= 0). Product constraint prod < M becomes sum w_i > -ln(M).
         // We need the minimal sum strictly greater than the threshold. That maximizes the product while being < M.
-        double threshold = -System.Math.Log(maxDamageLevel <= 0 ? double.Epsilon : maxDamageLevel);
+        double threshold = -Math.Log(maxDamageLevel <= 0 ? double.Epsilon : maxDamageLevel);
 
         // Use integer weights to keep DP map compact and stable
         const double scale = 1e5; // precision ~1e-5 in log-space
         var weights = new long[damageLevels.Length];
         for (int i = 0; i < damageLevels.Length; i++)
         {
-            var w = -System.Math.Log(damageLevels[i]);
+            var w = -Math.Log(damageLevels[i]);
             if (double.IsInfinity(w) || double.IsNaN(w))
             {
                 w = 50.0; // fallback; corresponds to d ~ 1.928e-22
             }
-            weights[i] = (long)System.Math.Round(w * scale);
+            weights[i] = (long)Math.Round(w * scale);
             if (weights[i] < 0) weights[i] = 0;
         }
-        long thresholdInt = (long)System.Math.Floor(threshold * scale);
+        long thresholdInt = (long)Math.Floor(threshold * scale);
 
         // DP: store achievable sums and how we got there
         // parent[sum] = (prevSum, lastItemIndex)
-        var parent = new System.Collections.Generic.Dictionary<long, (long prev, int idx)>();
-        parent[0] = (-1, -1);
+        var parent = new Dictionary<long, (long prev, int idx)>
+        {
+            [0] = (-1, -1)
+        };
 
         // To iterate current frontier of sums
-        var sums = new System.Collections.Generic.List<long> { 0 };
+        var sums = new List<long> { 0 };
 
         for (int i = 0; i < weights.Length; i++)
         {
@@ -242,7 +260,7 @@ public class RepairScrap
         }
 
         // Reconstruct chosen subset
-        var chosenIdx = new System.Collections.Generic.List<int>();
+        var chosenIdx = new List<int>();
         long cur = best;
         while (cur != 0)
         {
