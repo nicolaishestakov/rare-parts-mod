@@ -200,7 +200,13 @@ public class TransferAll
         }
     }
 
-    public void MoveShoppingListFromWarehouseToInventory(bool deleteMovedFromShoppingList = true, int minConditionToDelete = 0)
+    public enum MoveShoppingListMode
+    {
+        MoveNewOrRepairableAndDeleteFromShoppingList,
+        MoveRareUnrepairable
+    }
+    
+    public void MoveShoppingListFromWarehouseToInventory(MoveShoppingListMode mode)
     {
         var inventory = Singleton<Inventory>.Instance;
         var warehouse = Singleton<Warehouse>.Instance;
@@ -215,6 +221,7 @@ public class TransferAll
         }
 
         var moved = false;
+        var shoppingListModified = false;
 
         foreach (var shopItem in shopListWindow.items.ToEnumerable().ToList())
         {
@@ -226,29 +233,33 @@ public class TransferAll
 
             foreach (var item in found)
             {
-                if (wantedAmount <= 0)
+                if (mode == MoveShoppingListMode.MoveNewOrRepairableAndDeleteFromShoppingList)
                 {
-                    break;
-                }
 
-                var delete = deleteMovedFromShoppingList;
-
-                if (delete && minConditionToDelete > 0)
-                {
-                    delete = item.Condition * 100f >= minConditionToDelete;
-                    if (!delete)
+                    if (wantedAmount > 0 && item.Condition >= item.MinConditionToRepair)
                     {
-                        MelonLogger.Msg($"Item {item.ID} condition {item.Condition * 100f} is less than {minConditionToDelete} so will not be removed from shopping list");
+                        MoveItemFromWareHouseToInventory(inventory, warehouse, shopListWindow, shopItem, item, true);    
+                        wantedAmount--;
+                        moved = true;
+                        shoppingListModified = true;
+                    }
+                    else
+                    {
+                        MelonLogger.Msg($"Item {item.ID} condition {item.Condition * 100f} is not repairable so will not be moved");
                     }
                 }
-                
-                MoveItemFromWareHouseToInventory(inventory, warehouse, shopListWindow, shopItem, item, delete);
-                wantedAmount--;
-                moved = true;
+                else if (mode == MoveShoppingListMode.MoveRareUnrepairable)
+                {
+                    if (item.IsRare && item.Condition < item.MinConditionToRepair)
+                    {
+                        MoveItemFromWareHouseToInventory(inventory, warehouse, shopListWindow, shopItem, item, false);
+                        moved = true;
+                    }
+                }
             }
         }
 
-        if (moved && shopListWindow.IsActive)
+        if (shoppingListModified && shopListWindow.IsActive)
         {
             MelonLogger.Msg("shopListWindow is active, trying to refresh");
             shopListWindow.Hide(true);

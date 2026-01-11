@@ -11,7 +11,7 @@ public static class PartsInfo
     /// <summary>
     /// Minimal condition to repair a part from the list of special repairable parts.
     /// </summary>
-    public const float SpecialRepairablePartsMinCondition = 0.85f;
+    public static float SpecialRepairablePartsMinCondition { get; set; } = 0.85f;
     
     /// <summary>
     /// Minimal condition to repair a normal repairable part (set by game, not configurable).
@@ -27,9 +27,4 @@ public static class PartsInfo
     /// Parts that are banned from shops and can be found only in junkyards, barns, or ripped off cars.
     /// </summary>
     public static HashSet<string> RareParts { get; } = [];
-    
-    /// <summary>
-    /// Cars that are banned from shops and can be found only in junkyards, barns, or auctions.
-    /// </summary>
-    public static HashSet<string> RareCars { get; } = [];
 }

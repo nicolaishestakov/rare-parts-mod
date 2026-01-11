@@ -27,45 +27,13 @@ public class Patched
                 
             var itemId = item.BaseItem.ID;
             
-            if (PartsInfo.SpecialRepairableParts.Contains(itemId) && item.BaseItem.GetCondition() < PartsInfo.SpecialRepairablePartsMinCondition)
+            if (item.BaseItem.GetCondition() < item.BaseItem.MinConditionToRepair)
             {
                 MelonLogger.Msg("Trying to lock it");
                 item.IsLocked = true;
             }
         }
     }
-
-    private static void LockRepairItems(ChoosePartDownWindow choosePartDownWindow)
-    {
-        if (choosePartDownWindow is null)
-        {
-            MelonLogger.Msg($"ChoosePartDownWindow is null");
-            return;
-        }
-
-        MelonLogger.Msg($"ChoosePartDownWindow has {choosePartDownWindow.items.Count} items");
-
-        foreach (var item in choosePartDownWindow.items)
-        {
-            MelonLogger.Msg($"Item: {item.BaseItem.ID}, Condition: {item.BaseItem.GetCondition()}, IsLocked: {item.IsLocked}, Checked: {item.Checked}");
-                
-            if (item.BaseItem.ID.StartsWith("car"))
-            {
-                MelonLogger.Msg("Trying to lock it");
-                item.IsLocked = true;
-                item.Price = 123; //todo testing
-            }
-        }
-
-        choosePartDownWindow.currentPage = 2;
-    }
-
-    // [HarmonyPatch(typeof(TempInventory), "AddItem")]
-    // [HarmonyPostfix]
-    // public static void TempInventory_AddItem_Postfix(TempInventory __instance)
-    // {
-    //     MelonLogger.Msg($"TempInventory_AddItem_Postfix: {__instance.Pointer}, {__instance.items.Count} items");
-    // }
     
     [HarmonyPatch(typeof(TempInventory), "ClearListOfItems")]
     [HarmonyPrefix]

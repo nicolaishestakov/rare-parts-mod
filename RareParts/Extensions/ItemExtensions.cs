@@ -9,6 +9,10 @@ public static class ItemExtensions
         public bool IsRare => PartsInfo.RareParts.Contains(item.ID);
         public bool IsSpecialRepairable => PartsInfo.SpecialRepairableParts.Contains(item.ID);
         public bool IsNonRepairable => PartsInfo.NonRepairableParts.Contains(item.ID);
+
+        public float MinConditionToRepair =>
+            item.IsSpecialRepairable ? PartsInfo.SpecialRepairablePartsMinCondition :
+            item.IsNonRepairable ? 1.0f : PartsInfo.NormalRepairablePartsMinCondition;
     }
 
     public static (int MapCount, int CaseCount) GetMapAndCaseCounts(this Il2CppSystem.Collections.Generic.List<BaseItem> items)

@@ -2,7 +2,6 @@ using CMS.UI.Logic;
 using Harmony;
 using MelonLoader;
 using System.Collections.Generic;
-using System.Linq;
 using RareParts.Extensions;
 using RareParts.Logging;
 using UnityEngine;
@@ -28,7 +27,7 @@ public class RarePartsMod : MelonMod
         harmony.PatchAll();
 
         _config = new Config("Mods/RareParts.cfg");
-        _config.Reload();
+        PartsInfo.SpecialRepairablePartsMinCondition = _config.SpecialRepairablePartsMinCondition / 100f;
         
         #if DEBUG
         var logLevel = LogLevel.Trace;
@@ -98,7 +97,9 @@ public class RarePartsMod : MelonMod
         if (Input.GetKeyUp(_config.MoveShoppingListToInventoryKey))
         {
             _logger.Information($"Command: Move Shopping List from Warehouse to Inventory");
-            _transferAll.MoveShoppingListFromWarehouseToInventory(!IsShiftPressed(), _config.MinPartCondition);
+            _transferAll.MoveShoppingListFromWarehouseToInventory(IsShiftPressed() 
+                ? TransferAll.MoveShoppingListMode.MoveRareUnrepairable 
+                : TransferAll.MoveShoppingListMode.MoveNewOrRepairableAndDeleteFromShoppingList);
         }
 
         if (Input.GetKeyUp(_config.ScrapRepairKey))
@@ -220,11 +221,6 @@ public class RarePartsMod : MelonMod
     private void InitAllItems(Il2CppSystem.Collections.Generic.List<PartProperty> items)
     {
         var rareParts = GetRarePartsWithPriceMultiplier();
-        
-        foreach (var part in rareParts.Keys.Where(x => x.StartsWith("car_")))
-        {
-            PartsInfo.RareCars.Add(part);
-        }
         
         foreach (var item in items)
         {

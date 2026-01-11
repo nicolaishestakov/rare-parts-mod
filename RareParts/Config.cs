@@ -872,8 +872,6 @@ namespace RareParts
         private const int DefaultValuePriceSportGT = 22;
         private const int DefaultValuePriceSpecialRetro = 50;
         private const int DefaultValuePriceOther = 5;
-
-        private readonly MelonPreferences_Category _config;
         
         private readonly MelonPreferences_Entry<int> _priceParts1950_1959;
         private readonly MelonPreferences_Entry<int> _priceParts1960_1969;
@@ -1005,6 +1003,9 @@ namespace RareParts
         /// </summary>
         public int[] MoveShoppingListWarehouses => _moveShoppingListWarehouses.Value;
         private readonly MelonPreferences_Entry<int[]> _moveShoppingListWarehouses;
+
+        public int SpecialRepairablePartsMinCondition => _specialRepairablePartsMinCondition.Value;
+        private readonly MelonPreferences_Entry<int> _specialRepairablePartsMinCondition;
         
         /// <summary>
         /// Set to true to enable debugging features like additional logging.
@@ -1058,67 +1059,69 @@ namespace RareParts
         
         public Config(string configFilePath)
         {
-            _config = CreateCategory("MainSection");
-            _isEnableShop = _config.CreateEntry(nameof(IsEnableShop), false);
-            _isEnableAdditionalAuction = _config.CreateEntry(nameof(IsEnableAdditionalAuction), false);
-            _isDebugMode = _config.CreateEntry(nameof(IsDebugMode), false,
+            var mainCategory = CreateCategory("Main");
+            _isEnableShop = mainCategory.CreateEntry(nameof(IsEnableShop), false);
+            _isEnableAdditionalAuction = mainCategory.CreateEntry(nameof(IsEnableAdditionalAuction), false);
+            _isDebugMode = mainCategory.CreateEntry(nameof(IsDebugMode), false,
                 description: "Set to true to enable debugging features like additional logging.");
 
-            var cfgSectionCars = CreateCategory("CarSection");
+            var pricesCategory = CreateCategory("Prices");
             
-            _priceParts1950_1959 = cfgSectionCars.CreateEntry(nameof(PriceParts1950_1959), DefaultValuePriceParts1950_1959);
-            _priceParts1960_1969 = cfgSectionCars.CreateEntry(nameof(PriceParts1960_1969), DefaultValuePriceParts1960_1969);
-            _priceParts1970_1979 = cfgSectionCars.CreateEntry(nameof(PriceParts1970_1979), DefaultValuePriceParts1970_1979);
-            _priceParts1980_1990 = cfgSectionCars.CreateEntry(nameof(PriceParts1980_1990), DefaultValuePriceParts1980_1990);
-            _priceParts1991_2000 = cfgSectionCars.CreateEntry(nameof(PriceParts1991_2000), DefaultValuePriceParts1991_2000);
-            _priceParts2001_2005 = cfgSectionCars.CreateEntry(nameof(PriceParts2001_2005), DefaultValuePriceParts2001_2005);
-            _pricePartsGT = cfgSectionCars.CreateEntry(nameof(PricePartsSportGT), DefaultValuePriceSportGT);
-            _pricePartsSpecialRetro = cfgSectionCars.CreateEntry(nameof(PricePartsSpecialRetro), DefaultValuePriceSpecialRetro);
-            _pricePartsOther = cfgSectionCars.CreateEntry(nameof(PricePartsOther), DefaultValuePriceOther);
+            _priceParts1950_1959 = pricesCategory.CreateEntry(nameof(PriceParts1950_1959), DefaultValuePriceParts1950_1959);
+            _priceParts1960_1969 = pricesCategory.CreateEntry(nameof(PriceParts1960_1969), DefaultValuePriceParts1960_1969);
+            _priceParts1970_1979 = pricesCategory.CreateEntry(nameof(PriceParts1970_1979), DefaultValuePriceParts1970_1979);
+            _priceParts1980_1990 = pricesCategory.CreateEntry(nameof(PriceParts1980_1990), DefaultValuePriceParts1980_1990);
+            _priceParts1991_2000 = pricesCategory.CreateEntry(nameof(PriceParts1991_2000), DefaultValuePriceParts1991_2000);
+            _priceParts2001_2005 = pricesCategory.CreateEntry(nameof(PriceParts2001_2005), DefaultValuePriceParts2001_2005);
+            _pricePartsGT = pricesCategory.CreateEntry(nameof(PricePartsSportGT), DefaultValuePriceSportGT);
+            _pricePartsSpecialRetro = pricesCategory.CreateEntry(nameof(PricePartsSpecialRetro), DefaultValuePriceSpecialRetro);
+            _pricePartsOther = pricesCategory.CreateEntry(nameof(PricePartsOther), DefaultValuePriceOther);
 
-            _whiteCarParts = cfgSectionCars.CreateEntry(nameof(WhiteCarParts), DefaultListWhiteCarParts);
-            _retroParts = cfgSectionCars.CreateEntry(nameof(ListRetroParts), DefaultRetroParts);
+            _whiteCarParts = pricesCategory.CreateEntry(nameof(WhiteCarParts), DefaultListWhiteCarParts);
+            _retroParts = pricesCategory.CreateEntry(nameof(ListRetroParts), DefaultRetroParts);
 
-            var cfgSectionParts = CreateCategory("Category");
-            _retroParts1950_1959 = cfgSectionParts.CreateEntry(nameof(ListRetroParts1950_1959), DefaultRetroParts1950_1959);
-            _retroParts1960_1969 = cfgSectionParts.CreateEntry(nameof(ListRetroParts1960_1969), DefaultRetroParts1960_1969);
-            _retroParts1970_1979 = cfgSectionParts.CreateEntry(nameof(ListRetroParts1970_1979), DefaultRetroParts1970_1979);
-            _retroParts1980_1990 = cfgSectionParts.CreateEntry(nameof(ListRetroParts1980_1990), DefaultRetroParts1980_1990);
-            _retroParts1991_2000 = cfgSectionParts.CreateEntry(nameof(ListRetroParts1991_2000), DefaultRetroParts1991_2000);
-            _retroParts2001_2005 = cfgSectionParts.CreateEntry(nameof(ListRetroParts2001_2005), DefaultRetroParts2001_2005);
+            var partsCategory = CreateCategory("Parts");
+            _retroParts1950_1959 = partsCategory.CreateEntry(nameof(ListRetroParts1950_1959), DefaultRetroParts1950_1959);
+            _retroParts1960_1969 = partsCategory.CreateEntry(nameof(ListRetroParts1960_1969), DefaultRetroParts1960_1969);
+            _retroParts1970_1979 = partsCategory.CreateEntry(nameof(ListRetroParts1970_1979), DefaultRetroParts1970_1979);
+            _retroParts1980_1990 = partsCategory.CreateEntry(nameof(ListRetroParts1980_1990), DefaultRetroParts1980_1990);
+            _retroParts1991_2000 = partsCategory.CreateEntry(nameof(ListRetroParts1991_2000), DefaultRetroParts1991_2000);
+            _retroParts2001_2005 = partsCategory.CreateEntry(nameof(ListRetroParts2001_2005), DefaultRetroParts2001_2005);
 
-            _sportGT = cfgSectionParts.CreateEntry(nameof(ListSportGT), DefaultSportGT);
-            _specialRetro = cfgSectionParts.CreateEntry(nameof(ListSpecialRetro), DefaultSpecialRetro);
+            _sportGT = partsCategory.CreateEntry(nameof(ListSportGT), DefaultSportGT);
+            _specialRetro = partsCategory.CreateEntry(nameof(ListSpecialRetro), DefaultSpecialRetro);
             
             // TransferAll configs
-            var settings = CreateCategory("TransferAll");
+            var transferAllCategory = CreateCategory("TransferAll");
             
-            _transferAllItemsAndGroupsKey = settings.CreateEntry(nameof(TransferAllItemsAndGroupsKey), KeyCode.K, 
+            _transferAllItemsAndGroupsKey = transferAllCategory.CreateEntry(nameof(TransferAllItemsAndGroupsKey), KeyCode.K, 
                 description: "https://docs.unity3d.com/ScriptReference/KeyCode.html for KeyCodes." + Il2CppSystem.Environment.NewLine + "Press This Key to transfer all current items and groups.");
-            _transferEntireJunkyardOrBarnKey = settings.CreateEntry(nameof(TransferEntireJunkyardOrBarnKey), KeyCode.L,
+            _transferEntireJunkyardOrBarnKey = transferAllCategory.CreateEntry(nameof(TransferEntireJunkyardOrBarnKey), KeyCode.L,
                 description: "ONLY WORKS AT BARN AND JUNKYARD." + Il2CppSystem.Environment.NewLine + "Press This Key to transfer all items and groups from ALL junk stashes.");
-            _setPartConditionLower = settings.CreateEntry(nameof(SetPartConditionLower), KeyCode.Minus,
+            _setPartConditionLower = transferAllCategory.CreateEntry(nameof(SetPartConditionLower), KeyCode.Minus,
                 description: "Press This Key to set the condition percentage lower by 10%." + Il2CppSystem.Environment.NewLine + "This value is saved to MinPartCondition value below on exit.");
-            _setPartConditionHigherKey = settings.CreateEntry(nameof(SetPartConditionHigherKey), KeyCode.Equals,
+            _setPartConditionHigherKey = transferAllCategory.CreateEntry(nameof(SetPartConditionHigherKey), KeyCode.Equals,
                 description: "Press This Key to set the condition percentage higher by 10%." + Il2CppSystem.Environment.NewLine + "This value is saved to MinPartCondition value below on exit.");
-            _minPartCondition = settings.CreateEntry(nameof(MinPartCondition), 0,
+            _minPartCondition = transferAllCategory.CreateEntry(nameof(MinPartCondition), 0,
                 description: "This value will transfer parts with a condition equal to and above this number." + Il2CppSystem.Environment.NewLine + "SET TO 0 TO TRANSFER EVERYTHING.");
-            _minNumOfItemsWarning = settings.CreateEntry(nameof(MinNumOfItemsWarning), 500,
+            _minNumOfItemsWarning = transferAllCategory.CreateEntry(nameof(MinNumOfItemsWarning), 500,
                 description: "This will display a warning if the items/groups are above this number (to prevent large moves by accident).");
-            _transferByCategory = settings.CreateEntry(nameof(TransferByCategory), true,
+            _transferByCategory = transferAllCategory.CreateEntry(nameof(TransferByCategory), true,
                 description: "Set this to false and the TransferAllItemsAndGroups key will move all items regardless of the selected category (engine, suspension, etc.).");
-            _transferPartsOnlyAtBarnOrJunkyard = settings.CreateEntry(nameof(TransferPartsOnlyAtBarnOrJunkyard), false,
+            _transferPartsOnlyAtBarnOrJunkyard = transferAllCategory.CreateEntry(nameof(TransferPartsOnlyAtBarnOrJunkyard), false,
                 description: "Set this to true and only non-body parts are moved to the Shopping Cart in the Barn/Junkyard.");
-            _transferMapsOrCasesOnlyAtBarnOrJunkyard = settings.CreateEntry(nameof(TransferMapsOrCasesOnlyAtBarnOrJunkyard), false,
+            _transferMapsOrCasesOnlyAtBarnOrJunkyard = transferAllCategory.CreateEntry(nameof(TransferMapsOrCasesOnlyAtBarnOrJunkyard), false,
                 description: "Set this to true and only maps or cases are moved to the Shopping Cart in the Barn/Junkyard." + Il2CppSystem.Environment.NewLine + "THIS OVERRIDES THE TransferPartsOnlyAtBarnOrJunkyard SETTING ABOVE.");
-            _switchModeKey = settings.CreateEntry(nameof(SwitchModeKey), KeyCode.KeypadMultiply,
+            _switchModeKey = transferAllCategory.CreateEntry(nameof(SwitchModeKey), KeyCode.KeypadMultiply,
                 description: "Press the key to switch between the By Condition/Skip Unrepairable/Only Rare Repairable modes.");
-            _moveShoppingListWarehouses = settings.CreateEntry(nameof(MoveShoppingListWarehouses), DefaultMoveShoppingListWarehouses,
+            _moveShoppingListWarehouses = transferAllCategory.CreateEntry(nameof(MoveShoppingListWarehouses), DefaultMoveShoppingListWarehouses,
                 description: "Warehouses IDs to move Shopping List items to (comma-separated). Default: 1,2");
-            _scrapRepairKey = settings.CreateEntry(nameof(ScrapRepairKey), KeyCode.R,
+            _scrapRepairKey = transferAllCategory.CreateEntry(nameof(ScrapRepairKey), KeyCode.R,
                 description: "Press this key to scrap-repair available identical parts. Works inside the scrapping workshop on the upgrade tab.");
-            _moveShoppingListToInventoryKey = settings.CreateEntry(nameof(MoveShoppingListToInventoryKey), KeyCode.F6,
+            _moveShoppingListToInventoryKey = transferAllCategory.CreateEntry(nameof(MoveShoppingListToInventoryKey), KeyCode.F6,
                 description: "Press this key to search and move Shopping List items from Warehouse(s) to Inventory. The items found and moved are removed from the Shopping List, unless pressed with the shift key.");
+            _specialRepairablePartsMinCondition = transferAllCategory.CreateEntry(nameof(SpecialRepairablePartsMinCondition), 85,
+                description: "Minimum condition (0..100) for a Special Repairable part to be considered repairable.");
             
             
             // local functions
@@ -1128,11 +1131,6 @@ namespace RareParts
                 category.SetFilePath(configFilePath);
                 return category;
             }
-        }
-
-        public void Reload() //todo reloads only main category?
-        {
-            _config.LoadFromFile();
         }
     }
 }

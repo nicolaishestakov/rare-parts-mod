@@ -4,7 +4,6 @@ using System.Linq;
 using System.Text;
 using CMS.UI;
 using CMS.UI.Windows;
-using JetBrains.Annotations;
 using MelonLoader;
 using RareParts.Extensions;
 
@@ -154,12 +153,7 @@ public class RepairScrap
             return items;
         }
 
-        double damageLevel = 1 - PartsInfo.NormalRepairablePartsMinCondition;
-        
-        if (PartsInfo.SpecialRepairableParts.Contains(itemSample.ID))
-        {
-            damageLevel = 1 - PartsInfo.SpecialRepairablePartsMinCondition;
-        }
+        double damageLevel = 1 - itemSample.MinConditionToRepair;
         
         return FilterOptimalItems(items.Where(x => GetItemDamageLevel(x) > damageLevel).ToList() , damageLevel);
     }
