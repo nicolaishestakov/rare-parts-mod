@@ -1120,7 +1120,7 @@ namespace RareParts
                 description: "Press this key to scrap-repair available identical parts. Works inside the scrapping workshop on the upgrade tab.");
             _moveShoppingListToInventoryKey = transferAllCategory.CreateEntry(nameof(MoveShoppingListToInventoryKey), KeyCode.F6,
                 description: "Press this key to search and move Shopping List items from Warehouse(s) to Inventory. The items found and moved are removed from the Shopping List, unless pressed with the shift key.");
-            _specialRepairablePartsMinCondition = transferAllCategory.CreateEntry(nameof(SpecialRepairablePartsMinCondition), 85,
+            _specialRepairablePartsMinCondition = transferAllCategory.CreateEntry(nameof(SpecialRepairablePartsMinCondition), 80,
                 description: "Minimum condition (0..100) for a Special Repairable part to be considered repairable.");
             
             

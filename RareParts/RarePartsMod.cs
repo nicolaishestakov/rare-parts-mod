@@ -12,7 +12,7 @@ public class RarePartsMod : MelonMod
 {
     private Config _config;
     private ILogger<RarePartsMod> _logger;
-    private bool _isInitialized = true; //todo invert value
+    private bool _isInitialized = false;
 
     private TransferAll _transferAll;
     private TempInventoryManager _tempInventoryManager;
@@ -264,12 +264,12 @@ public class RarePartsMod : MelonMod
             gameSettingData.Init();
         }
         
-        if (buildIndex == 10 && _isInitialized)
+        if (buildIndex == 10 && !_isInitialized)
         {
             _logger.Debug($"Initialization at scene {sceneName}. Game version: {GameSettings.BuildVersion}");
             GlobalInits();
 
-            _isInitialized = false;
+            _isInitialized = true;
         }
     }
 

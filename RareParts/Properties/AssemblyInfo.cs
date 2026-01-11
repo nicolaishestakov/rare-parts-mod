@@ -19,5 +19,5 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyVersion("0.1.1.0")]
 [assembly: AssemblyFileVersion("0.1.1.0")]
 
-[assembly: MelonInfo(typeof(RarePartsMod), "RareParts", "0.1.1", "nicolaishestakov")]
+[assembly: MelonInfo(typeof(RarePartsMod), "RareParts", "0.1.1", "Nicolai")]
 [assembly: MelonGame("Red Dot Games", "Car Mechanic Simulator 2021")]

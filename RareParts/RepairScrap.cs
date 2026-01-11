@@ -101,7 +101,7 @@ public class RepairScrap
             uiManager.ShowPopup("SCRAP-REPAIR",
                 $"{chosenItem.GetLocalizedName()} repaired from {repairableItems.Count} parts to {ConditionToPercent(chosenItem.Condition)}.", PopupType.Normal);
 
-            scrapWindow.choosePartDownWindow?.Refresh();
+            scrapWindow.choosePartDownWindow?.Refresh(); // todo this does not work
         });
         
         uiManager.ShowAskWindow("SCRAP-REPAIR ITEMS", description.ToString(), repairAction);

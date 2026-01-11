@@ -163,7 +163,9 @@ internal static class Debug
     public static void LogItemState(BaseItem item)
     {
         var asItem = item.TryCast<Item>();
-        MelonLogger.Msg($"{item.ID}, name: {item.GetLocalizedName()}, UID: {item.UID}, Pointer: {item.Pointer}, non-repairable: {item.IsNonRepairable}, rare: {item.IsRare}, special repairable: {item.IsSpecialRepairable}, repair amount: {asItem?.RepairAmount}");
+        MelonLogger.Msg(
+            $"{item.ID}, name: {item.GetLocalizedName()}, UID: {item.UID}, Pointer: {item.Pointer}, non-repairable: {item.IsNonRepairable}, "
+            + $"rare: {item.IsRare}, special repairable: {item.IsSpecialRepairable}, repair amount: {asItem?.RepairAmount}, repair from: {item.MinConditionToRepair:F3}");
     }
     
     public static void LogWarehouseItems()
