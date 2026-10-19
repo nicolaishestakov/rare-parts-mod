@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <RootNamespace>RareParts</RootNamespace>
+    <LangVersion>14</LangVersion>
+    <Configurations>Debug;Release;Release-Deploy</Configurations>
+    <Optimize Condition="'$(Configuration)' == 'Release-Deploy'">true</Optimize>
+  </PropertyGroup>
+</Project>

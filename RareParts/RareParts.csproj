@@ -17,6 +17,7 @@
     <Cms2021InstallDir>C:\Program Files (x86)\Steam\steamapps\common\Car Mechanic Simulator 2021</Cms2021InstallDir>
     <SteamAppId>1190000</SteamAppId>
     <GameModsDir>$(Cms2021InstallDir)\Mods</GameModsDir>
+    <GameUserLibsDir>$(Cms2021InstallDir)\UserLibs</GameUserLibsDir>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -117,18 +118,21 @@
     <Compile Include="Debug.cs" />
     <Compile Include="Extensions\ItemExtensions.cs" />
     <Compile Include="Extensions\ListExtensions.cs" />
-    <Compile Include="Extensions\StringExtensions.cs" />
     <Compile Include="Extensions\WarehouseExtensions.cs" />
     <Compile Include="Logging\MelonLoggerAdapter.cs" />
-    <Compile Include="PartsInfo.cs" />
     <Compile Include="Patched.cs" />
     <Compile Include="QolSettings.cs" />
     <Compile Include="RarePartsMod.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RepairScrap.cs" />
-    <Compile Include="Scene.cs" />
     <Compile Include="TempInventoryManager.cs" />
     <Compile Include="TransferAll.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\RareParts.Core\RareParts.Core.csproj">
+      <Project>{615A53A2-955B-4E88-92D0-9E7DFAB96D20}</Project>
+      <Name>RareParts.Core</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Content Include="PartList.csv" />
@@ -138,11 +142,17 @@
     <ItemGroup>
       <DeployFiles Include="$(TargetPath)" />
       <DeployFiles Include="$(TargetDir)$(TargetName).pdb" Condition="Exists('$(TargetDir)$(TargetName).pdb')" />
+      <DeployLibraries Include="$(TargetDir)RareParts.Core.dll" />
+      <DeployLibraries Include="$(TargetDir)RareParts.Core.pdb" Condition="Exists('$(TargetDir)RareParts.Core.pdb')" />
     </ItemGroup>
     <Copy SourceFiles="@(DeployFiles)"
           DestinationFolder="$(GameModsDir)"
           SkipUnchangedFiles="true" />
     <Message Importance="High" Text="Deployed: @(DeployFiles) → $(GameModsDir)" />
+    <Copy SourceFiles="@(DeployLibraries)"
+          DestinationFolder="$(GameUserLibsDir)"
+          SkipUnchangedFiles="true" />
+    <Message Importance="High" Text="Deployed: @(DeployLibraries) → $(GameUserLibsDir)" />
     <!-- Launch via Steam AppId (detach using start) -->
     <Exec Condition="'$(AutoRunGame)' == 'true' and '$(SteamAppId)' != ''"
           Command='cmd /c start "" steam://run/$(SteamAppId)'

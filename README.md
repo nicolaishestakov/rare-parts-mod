@@ -18,6 +18,24 @@ The mod is inspired by https://github.com/microup/realshop and https://github.co
 
 Works with Melon Loader 0.5.7 (so it can be run together with QoL mod).
 
+Install `RareParts.dll` in the game's `Mods` directory and `RareParts.Core.dll` in its `UserLibs` directory. The `Release-Deploy` configuration copies both assemblies to these locations.
+
+## Project structure
+
+- `RareParts.Core` targets .NET Standard 2.0 and contains the scrap-repair calculator, scene classification, part metadata, string helpers, and logging abstractions. It has no game, Unity, or MelonLoader dependencies.
+- `RareParts` targets .NET Framework 4.8 and contains game integration, Harmony patches, MelonLoader callbacks, preferences, UI, and the MelonLogger implementation. Building it requires the game assemblies.
+- `RareParts.Tests` references `RareParts.Core` and runs independently of the game.
+
+## Unit tests
+
+With the .NET 10 SDK installed, run:
+
+```powershell
+dotnet test RareParts.Tests/RareParts.Tests.csproj
+```
+
+The tests reference the production `RareParts.Core` assembly, so no game installation or Unity runtime is needed. They cover combined condition, repair thresholds, optimal part selection, duplicate parts, and inventory preservation. An independent exhaustive search also checks selection results on small inventories, allowing for the algorithm's existing log-weight rounding.
+
 ## Disclaimer
 
 Some features have 'hacky' or awkward implementation (no proper UI, menus, etc) due to game limitations (or my unawareness how to do it better).
