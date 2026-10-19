@@ -422,8 +422,6 @@ public class TransferAll
     {
         // Disable QoLmod settings temporarily.
         using var guard = new QolSettingsGuard(_qolSettings);
-        _qolSettings.ShowPopupForAllPartsInGroup = false;
-        _qolSettings.ShowPopupForGroupAddedInventory = false;
 
         int invItemCount = 0;
         int invGroupCount = 0;
@@ -600,8 +598,6 @@ public class TransferAll
 #endif
         // Disable QoLmod settings temporarily.
         using var guard = new QolSettingsGuard(_qolSettings);
-        _qolSettings.ShowPopupForAllPartsInGroup = false;
-        _qolSettings.ShowPopupForGroupAddedInventory = false;
         
         // Setup temporary counts to return at the end.
         int wareItemCount = 0;
@@ -854,8 +850,6 @@ public class TransferAll
 
         // Disable QoLmod settings temporarily.
         using var guard = new QolSettingsGuard(_qolSettings);
-        _qolSettings.ShowPopupForAllPartsInGroup = false;
-        _qolSettings.ShowPopupForGroupAddedInventory = false;
         
         // Check which Tab is currently being displayed.
         if (itemsExchangeWindow.currentTab == 0)  // This is the Junk (Found) Tab.
@@ -937,23 +931,26 @@ public class TransferAll
         var cachedJunkItems = GetJunkTempStorageItems(junk.Pointer);
         var cachedJunkGroups = GetJunkTempStorageGroups(junk.Pointer);
 
-        var itemCount = cachedJunkItems.Count;
-        var groupCount = cachedJunkGroups.Count;
-        
-        if (itemCount == 0 && groupCount == 0)
+        if (cachedJunkItems.Count == 0 && cachedJunkGroups.Count == 0)
         {
             Popup("No items to move");
             MelonLogger.Msg("No items to move");
+            return 0;
         }
+
+        var itemCount = 0;
+        var groupCount = 0;
         
         foreach (var item in cachedJunkItems)
         {
             if (!_tempInventoryManager.Contains(item))
             {
                 Popup( $"Can't move back {item.GetLocalizedName()}");
+                continue;
             }
             junk.ItemsInTrash.Add(item);
             _tempInventoryManager.Remove(item);
+            itemCount++;
         }
         
         foreach (var group in cachedJunkGroups)
@@ -961,9 +958,11 @@ public class TransferAll
             if (!_tempInventoryManager.Contains(group))
             {
                 Popup( $"Can't move back {group.GetLocalizedName()}");
+                continue;
             }
             junk.ItemsInTrash.Add(group);
             _tempInventoryManager.Remove(group);
+            groupCount++;
         }
         
         cachedJunkItems.Clear();

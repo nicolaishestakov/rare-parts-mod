@@ -100,7 +100,8 @@ public class QolSettings
 }
 
 /// <summary>
-/// Remembers qol settings state and restores them after the class is disposed.
+/// Temporarily suppresses QoLmod popups and restores their settings on disposal.
+/// Does nothing when QoLmod settings are unavailable.
 /// </summary>
 public class QolSettingsGuard : IDisposable
 {
@@ -116,6 +117,8 @@ public class QolSettingsGuard : IDisposable
         {
             _showPopupForGroupAddedInventory = settings.ShowPopupForGroupAddedInventory;
             _showPopupForAllPartsInGroup = settings.ShowPopupForAllPartsInGroup;
+            settings.ShowPopupForAllPartsInGroup = false;
+            settings.ShowPopupForGroupAddedInventory = false;
         }
     }
 
