@@ -8,7 +8,7 @@ namespace RareParts;
 
 public class QolSettings
 {
-    private FieldInfo _qolSettings;
+    private readonly FieldInfo _qolSettings;
 
     public QolSettings(FieldInfo qolSettings)
     {
@@ -103,14 +103,14 @@ public class QolSettings
 /// Temporarily suppresses QoLmod popups and restores their settings on disposal.
 /// Does nothing when QoLmod settings are unavailable.
 /// </summary>
-public class QolSettingsGuard : IDisposable
+public class QolPopupsBlockGuard : IDisposable
 {
     private readonly QolSettings _settings;
     private readonly bool _showPopupForGroupAddedInventory;
     private readonly bool _showPopupForAllPartsInGroup;
     private bool _disposed;
 
-    public QolSettingsGuard(QolSettings settings)
+    public QolPopupsBlockGuard(QolSettings settings)
     {
         _settings = settings;
         if (settings != null)
@@ -140,4 +140,21 @@ public class QolSettingsGuard : IDisposable
             }
         }
     }
+}
+
+public interface IQolPopupsBlocker
+{
+    QolPopupsBlockGuard BlockPopups();
+}
+
+public class QolPopupsBlocker : IQolPopupsBlocker
+{
+    private readonly QolSettings _settings;
+
+    public QolPopupsBlocker(QolSettings settings)
+    {
+        _settings = settings;
+    }
+
+    public QolPopupsBlockGuard BlockPopups() => new(_settings);
 }

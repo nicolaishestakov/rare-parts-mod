@@ -1,6 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <!-- The game's Mono runtime lacks the netstandard facade. Use net48 for the
+         mod, while retaining netstandard2.0 for the standalone test project. -->
+    <TargetFrameworks>net48;netstandard2.0</TargetFrameworks>
     <RootNamespace>RareParts</RootNamespace>
     <LangVersion>14</LangVersion>
     <Configurations>Debug;Release;Release-Deploy</Configurations>

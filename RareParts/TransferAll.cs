@@ -17,10 +17,11 @@ namespace RareParts;
 
 public class TransferAll
 {
-    public TransferAll(ITransferAllConfig config, TempInventoryManager tempInventoryManager)
+    public TransferAll(ITransferAllConfig config, TempInventoryManager tempInventoryManager, IQolPopupsBlocker qolPopupsBlocker)
     {
         _config = config;
         _tempInventoryManager = tempInventoryManager;
+        _qolPopupsBlocker = qolPopupsBlocker;
     }
 
     private readonly ITransferAllConfig _config;
@@ -51,13 +52,13 @@ public class TransferAll
     /// this causes some serious performance issues during bulk moves,
     /// so these references allow these settings to be disabled temporarily.
     /// </summary>
-    private QolSettings _qolSettings = null;
+    private readonly IQolPopupsBlocker _qolPopupsBlocker;
 
     /// <summary>
     /// Global reference used to temporarily hold the individual junk stashes in the Barn and Junkyard.
     /// This allows the individual stashes to be "undone" and transferred back.
     /// </summary>
-    private Dictionary<IntPtr, List<Item>> _tempItems = new ();
+    private readonly Dictionary<IntPtr, List<Item>> _tempItems = new ();
 
     private List<Item> GetJunkTempStorageItems(IntPtr junkStash)
     {
@@ -74,7 +75,7 @@ public class TransferAll
     /// Global reference used to temporarily hold the individual junk stashes in the Barn and Junkyard.
     /// This allows the individual stashes to be "undone" and transferred back.
     /// </summary>
-    private Dictionary<IntPtr, List<GroupItem>> _tempGroups = new ();
+    private readonly Dictionary<IntPtr, List<GroupItem>> _tempGroups = new ();
 
     private List<GroupItem> GetJunkTempStorageGroups(IntPtr junkStash)
     {
@@ -96,12 +97,7 @@ public class TransferAll
 
     public Mode TransferMode { get; private set; } = Mode.OnlyRareRepairable;
 
-    public void OnLateInitializeMelon() //TODO rename
-    {
-        _qolSettings = QolSettings.CreateFromLoadedMelonAssembly($"{Directory.GetCurrentDirectory()}\\Mods\\QoLmod.dll");
-    }
-
-    public void OnSceneWasInitialized(int buildIndex, string sceneName) // TODO rename
+    public void EnterScene(int buildIndex, string sceneName)
     {
         if (buildIndex == -1)
         {
@@ -116,11 +112,11 @@ public class TransferAll
             _tempItems.Clear();
             _tempGroups.Clear();
             _tempInventoryManager.Invalidate();
-            MelonLogger.Msg($"Leaving {sceneName}");
+            MelonLogger.Msg($"Entered {sceneName}");
         }
     }
 
-    public void OnSceneWasUnloaded(int buildIndex, string sceneName) // TODO rename
+    public void LeaveScene(int buildIndex, string sceneName)
     {
         if (buildIndex == -1)
         {
@@ -421,7 +417,7 @@ public class TransferAll
         Inventory inventory, Warehouse warehouse)
     {
         // Disable QoLmod settings temporarily.
-        using var guard = new QolSettingsGuard(_qolSettings);
+        using var guard = _qolPopupsBlocker.BlockPopups();
 
         int invItemCount = 0;
         int invGroupCount = 0;
@@ -597,7 +593,7 @@ public class TransferAll
         MelonLogger.Msg($"Called");
 #endif
         // Disable QoLmod settings temporarily.
-        using var guard = new QolSettingsGuard(_qolSettings);
+        using var guard = _qolPopupsBlocker.BlockPopups();
         
         // Setup temporary counts to return at the end.
         int wareItemCount = 0;
@@ -849,7 +845,7 @@ public class TransferAll
         }
 
         // Disable QoLmod settings temporarily.
-        using var guard = new QolSettingsGuard(_qolSettings);
+        using var guard = _qolPopupsBlocker.BlockPopups();
         
         // Check which Tab is currently being displayed.
         if (itemsExchangeWindow.currentTab == 0)  // This is the Junk (Found) Tab.

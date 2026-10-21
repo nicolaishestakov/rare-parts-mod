@@ -20,9 +20,11 @@ Works with Melon Loader 0.5.7 (so it can be run together with QoL mod).
 
 Install `RareParts.dll` in the game's `Mods` directory and `RareParts.Core.dll` in its `UserLibs` directory. The `Release-Deploy` configuration copies both assemblies to these locations.
 
+For manual installation, use the `RareParts.Core.dll` copied alongside `RareParts.dll` in the mod's build output. This is the .NET Framework 4.8 build; the .NET Standard build requires a `netstandard` assembly that the game's Mono runtime does not provide. When upgrading, replace both DLLs.
+
 ## Project structure
 
-- `RareParts.Core` targets .NET Standard 2.0 and contains the scrap-repair calculator, scene classification, part metadata, string helpers, and logging abstractions. It has no game, Unity, or MelonLoader dependencies.
+- `RareParts.Core` targets .NET Framework 4.8 for the mod and .NET Standard 2.0 for standalone tests, and contains the scrap-repair calculator, scene classification, part metadata, string helpers, and logging abstractions. It has no game, Unity, or MelonLoader dependencies.
 - `RareParts` targets .NET Framework 4.8 and contains game integration, Harmony patches, MelonLoader callbacks, preferences, UI, and the MelonLogger implementation. Building it requires the game assemblies.
 - `RareParts.Tests` references `RareParts.Core` and runs independently of the game.
 

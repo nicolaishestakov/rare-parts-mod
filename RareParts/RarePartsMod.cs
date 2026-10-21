@@ -2,6 +2,7 @@ using CMS.UI.Logic;
 using Harmony;
 using MelonLoader;
 using System.Collections.Generic;
+using System.IO;
 using RareParts.Extensions;
 using RareParts.Logging;
 using UnityEngine;
@@ -17,6 +18,9 @@ public class RarePartsMod : MelonMod
     private TransferAll _transferAll;
     private TempInventoryManager _tempInventoryManager;
     private RepairScrap _repairScrap;
+
+    private string _profilePlaytimeText;
+    private float _nextPlaytimeRefresh;
 
     
     public override void OnInitializeMelon()
@@ -39,13 +43,14 @@ public class RarePartsMod : MelonMod
         _logger = loggerFactory.CreateLogger<RarePartsMod>();
         
         _tempInventoryManager = new TempInventoryManager(); //todo inject logger
-        _transferAll = new TransferAll(_config, _tempInventoryManager); //todo inject logger
+        
         _repairScrap = new RepairScrap(); //todo inject logger
     }
 
     public override void OnLateInitializeMelon()
     {
-        _transferAll.OnLateInitializeMelon();
+        var qolSettings = QolSettings.CreateFromLoadedMelonAssembly($@"{Directory.GetCurrentDirectory()}\\Mods\\QoLmod.dll");
+        _transferAll = new TransferAll(_config, _tempInventoryManager, new QolPopupsBlocker(qolSettings)); //todo inject logger
     }
 
     private void GlobalInits()
@@ -77,6 +82,8 @@ public class RarePartsMod : MelonMod
 
     public override void OnUpdate()
     {
+        UpdatePlaytimeOverlay();
+
 #if !DEBUG
         if (_config.IsDebugMode)
 #endif
@@ -137,6 +144,26 @@ public class RarePartsMod : MelonMod
         UpdateButtonsState();
 
         bool IsShiftPressed() => Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
+    }
+
+    private void UpdatePlaytimeOverlay()
+    {
+        if (!_isInitialized || Time.unscaledTime < _nextPlaytimeRefresh)
+            return;
+
+        _nextPlaytimeRefresh = Time.unscaledTime + 1f;
+        var profile = Singleton<ProfileManager>.Instance?.GetSelectedProfileData();
+        _profilePlaytimeText = profile == null
+            ? null
+            : $"Profile playtime (raw): {profile.PlayTime}";
+    }
+
+    public override void OnGUI()
+    {
+        if (_profilePlaytimeText == null)
+            return;
+
+        GUI.Box(new Rect(20, 20, 300, 32), _profilePlaytimeText);
     }
 
     private void UpdateButtonsState()
@@ -254,6 +281,8 @@ public class RarePartsMod : MelonMod
         }
     }
 
+    private const int GarageSceneIndex = 10;
+    
     public override void OnSceneWasLoaded(int buildIndex, string sceneName)
     {
         {
@@ -264,7 +293,7 @@ public class RarePartsMod : MelonMod
             gameSettingData.Init();
         }
         
-        if (buildIndex == 10 && !_isInitialized)
+        if (buildIndex == GarageSceneIndex && !_isInitialized)
         {
             _logger.Debug($"Initialization at scene {sceneName}. Game version: {GameSettings.BuildVersion}");
             GlobalInits();
@@ -275,11 +304,11 @@ public class RarePartsMod : MelonMod
 
     public override void OnSceneWasInitialized(int buildIndex, string sceneName)
     {
-        _transferAll.OnSceneWasInitialized(buildIndex, sceneName);
+        _transferAll?.EnterScene(buildIndex, sceneName);
     }
 
     public override void OnSceneWasUnloaded(int buildIndex, string sceneName)
     {
-        _transferAll.OnSceneWasUnloaded(buildIndex, sceneName);
+        _transferAll?.LeaveScene(buildIndex, sceneName);
     }
 }
