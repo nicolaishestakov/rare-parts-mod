@@ -124,6 +124,7 @@
     <Compile Include="Extensions\WarehouseExtensions.cs" />
     <Compile Include="Logging\MelonLoggerAdapter.cs" />
     <Compile Include="Patched.cs" />
+    <Compile Include="PartsToFixToShoppingList.cs" />
     <Compile Include="QolSettings.cs" />
     <Compile Include="RarePartsMod.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

@@ -13,6 +13,7 @@ The mod is inspired by https://github.com/microup/realshop and https://github.co
  - Transfer all items from a barn or junkyard to shopping cart including repairable rare parts only. Executed by 'L' by default, choose the mode via Keypad Multiply.
  - Transfer all items from a barn or junkyard to shopping cart including parts from shopping list (of any condition). Executed by 'Shift-L' by default.
  - Find items in warehouse that are in shopping list and move them to inventory. Executed by 'F6' by default. Finds new or repairable items, moves them to inventory and removes from shopping list. When pressed with 'Shift' finds non-repairanle items and moves to inventory, does not modify shopping list. The latter mode is for finding items for scrap-repair.
+ - Add starred parts from the selected issue on the 'Issues to fix' tab to the shopping list with 'X' (configurable as `PartsToFixToShoppingListKey`). Includes all pages of that issue. Tops up each item/variant to the selected quantity (e.g. two pads selected and one already listed adds one), preserves tire/rim specifications, and shows the number added. Existing quantities above the selection are left unchanged; pressing X again adds nothing. Body and service rows have no stars in the game and are not included.
 
 ## Requirements
 

@@ -1,3 +1,4 @@
+using CMS.UI;
 using CMS.UI.Logic;
 using Harmony;
 using MelonLoader;
@@ -18,6 +19,7 @@ public class RarePartsMod : MelonMod
     private TransferAll _transferAll;
     private TempInventoryManager _tempInventoryManager;
     private RepairScrap _repairScrap;
+    private PartsToFixToShoppingList _partsToFixToShoppingList;
 
     private string _profilePlaytimeText;
     private float _nextPlaytimeRefresh;
@@ -45,6 +47,7 @@ public class RarePartsMod : MelonMod
         _tempInventoryManager = new TempInventoryManager(); //todo inject logger
         
         _repairScrap = new RepairScrap(); //todo inject logger
+        _partsToFixToShoppingList = new PartsToFixToShoppingList();
     }
 
     public override void OnLateInitializeMelon()
@@ -114,6 +117,11 @@ public class RarePartsMod : MelonMod
             _repairScrap.Repair();
         }
 
+        if (Input.GetKeyUp(_config.PartsToFixToShoppingListKey))
+        {
+            _partsToFixToShoppingList.Transfer();
+        }
+
         if (Input.GetKeyUp(_config.TransferAllItemsAndGroupsKey))
         {
             _transferAll.TransferAllItemsAndGroups(IsShiftPressed());
@@ -160,10 +168,29 @@ public class RarePartsMod : MelonMod
 
     public override void OnGUI()
     {
-        if (_profilePlaytimeText == null)
+        if (_profilePlaytimeText != null)
+            GUI.Box(new Rect(20, 20, 300, 32), _profilePlaytimeText);
+
+        DrawScrapRepairOverlay();
+    }
+
+    private void DrawScrapRepairOverlay()
+    {
+        if (_repairScrap == null)
             return;
 
-        GUI.Box(new Rect(20, 20, 300, 32), _profilePlaytimeText);
+        var windowManager = WindowManager.Instance;
+        if (windowManager == null || !windowManager.IsWindowActive(WindowID.Scrap))
+            return;
+
+        // Hide while a confirmation, info dialog, or other window covers the scrap interface.
+        var lastWindowId = windowManager.GetLastOpenedWindowID();
+        if (lastWindowId?.Value != WindowID.Scrap)
+            return;
+
+        GUI.Box(new Rect(20, 64, 300, 80), "Rare Parts");
+        if (GUI.Button(new Rect(30, 96, 280, 32), "Scrap-repair items"))
+            _repairScrap.Repair();
     }
 
     private void UpdateButtonsState()

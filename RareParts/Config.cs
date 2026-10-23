@@ -963,6 +963,9 @@ namespace RareParts
         
         public KeyCode MoveShoppingListToInventoryKey => _moveShoppingListToInventoryKey.Value;
         private readonly MelonPreferences_Entry<KeyCode> _moveShoppingListToInventoryKey;
+
+        public KeyCode PartsToFixToShoppingListKey => _partsToFixToShoppingListKey.Value;
+        private readonly MelonPreferences_Entry<KeyCode> _partsToFixToShoppingListKey;
         
         /// <summary>
         /// User setting for the minimum part condition to transfer.
@@ -1120,6 +1123,8 @@ namespace RareParts
                 description: "Press this key to scrap-repair available identical parts. Works inside the scrapping workshop on the upgrade tab.");
             _moveShoppingListToInventoryKey = transferAllCategory.CreateEntry(nameof(MoveShoppingListToInventoryKey), KeyCode.F6,
                 description: "Press this key to search and move Shopping List items from Warehouse(s) to Inventory. The items found and moved are removed from the Shopping List, unless pressed with the shift key.");
+            _partsToFixToShoppingListKey = transferAllCategory.CreateEntry(nameof(PartsToFixToShoppingListKey), KeyCode.X,
+                description: "Add marked parts from the selected issue on the Issues to fix tab to the shopping list. Existing quantities count toward the selected quantities; only missing amounts are added.");
             _specialRepairablePartsMinCondition = transferAllCategory.CreateEntry(nameof(SpecialRepairablePartsMinCondition), 80,
                 description: "Minimum condition (0..100) for a Special Repairable part to be considered repairable.");
             
