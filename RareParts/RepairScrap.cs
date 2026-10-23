@@ -101,7 +101,15 @@ public class RepairScrap
             uiManager.ShowPopup("SCRAP-REPAIR",
                 $"{chosenItem.GetLocalizedName()} repaired from {repairableItems.Count} parts to {ConditionToPercent(chosenItem.Condition)}.", PopupType.Normal);
 
-            scrapWindow.choosePartDownWindow?.Refresh(); // todo this does not work
+            // Rebuild the active tab's item list after consuming inventory items.
+            if (scrapWindow.scrapProduction?.IsActive == true)
+            {
+                scrapWindow.UpdateItemsForProduction();
+            }
+            else if (scrapWindow.scrapUpgrade?.IsActive == true)
+            {
+                scrapWindow.scrapUpgrade.UpdateItems();
+            }
         });
         
         uiManager.ShowAskWindow("SCRAP-REPAIR ITEMS", description.ToString(), repairAction);
@@ -113,21 +121,27 @@ public class RepairScrap
     }
 
     private static string ConditionToPercent(float condition) => $"{(int)(condition * 100)}%";
-    
-    private List<Item> GetRepairableItems(Inventory inventory, string priorId)
+
+    private static IEnumerable<List<Item>> GetRepairableItemGroups(Inventory inventory, string priorId)
     {
-        var itemsGroup = inventory.items.ToEnumerable()
+        return inventory.items.ToEnumerable()
+            .Where(x => x.Condition < 1)
             .GroupBy(x => x.ID)
-            .OrderBy(x => x.Key == priorId? 0 : 1)
+            .OrderBy(x => x.Key == priorId ? 0 : 1)
             .ThenByDescending(x => x.Count())
             .ThenBy(x => x.Sum(y => y.Condition))
-            .Select(x => FilterOptimalItems(x.ToList()))
+            .Select(x => FilterOptimalItems(x.ToList()));
+    }
+
+    private List<Item> GetRepairableItems(Inventory inventory, string priorId)
+    {
+        var itemsGroup = GetRepairableItemGroups(inventory, priorId)
             .FirstOrDefault(x => x.Count > 1);
 
         return itemsGroup ?? [];
     }
 
-    private List<Item> FilterOptimalItems(List<Item> items)
+    private static List<Item> FilterOptimalItems(List<Item> items)
     {
         if (items.Count < 2)
         {
