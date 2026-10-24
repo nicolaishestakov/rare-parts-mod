@@ -461,8 +461,8 @@ namespace RareParts
             "steering_wheel_gullwing",  
 
             // ENGINE (R4)
-            "r4_blok", "r4_gearbox_short", "r4_glowica_2", "r4_kolo_pasowe_walu", "r4_miska_olejowa", "r4_oslona",
-            "r4_pokrywa_glowicy", "r4_pompa_wody", "r4_pompa_wspomagania", "r4_przepustnica", "w_tlumik_wzdluzny", "walKorbowy_2",
+            "r4_blok", "r4_gearbox_short", "r4_glowica_2", "r4_miska_olejowa", "r4_oslona",
+            "r4_pokrywa_glowicy", "r4_pompa_wspomagania", "r4_przepustnica", "w_tlumik_wzdluzny", "walKorbowy_2",
             "t_w_tlumik_wzdluzny", "t_r4_przepustnica", "t_r4_glowica_2", "t_r4_pompa_wspomagania", "t_r4_gearbox_short",
 
 
