@@ -25,6 +25,7 @@ public sealed class TransferSettingsPanel
     private float _nextFontLookup;
     private GUIStyle _labelStyle, _buttonStyle, _titleStyle, _toggleStyle;
     private GUIStyle _actionStyle, _shortcutStyle;
+    private readonly Dictionary<Texture, FilterMode> _fontFilters = new();
     private static readonly Color TitleBackground = new(49 / 255f, 49 / 255f, 49 / 255f, 0.97f);
     private static readonly Color PanelBorder = new(111 / 255f, 111 / 255f, 110 / 255f, 0.97f);
     private static readonly Color SeparatorColor = new(1f, 160 / 255f, 0f);
@@ -287,6 +288,12 @@ public sealed class TransferSettingsPanel
         GUI.BeginGroup(new Rect((Screen.width / scale - width) / 2, (Screen.height / scale - height) / 2, width, height));
         try
         {
+            SmoothFont(_labelStyle);
+            SmoothFont(_buttonStyle);
+            SmoothFont(_titleStyle);
+            SmoothFont(_toggleStyle);
+            SmoothFont(_actionStyle);
+            SmoothFont(_shortcutStyle);
             DrawPanelBackground(width, titleHeight, bodyBottom);
             GUI.color = Color.white;
             GUI.Label(new Rect(1, 1, width - 2, titleHeight - 1), "TRANSFER ALL ITEMS", _titleStyle);
@@ -305,6 +312,10 @@ public sealed class TransferSettingsPanel
         }
         finally
         {
+            foreach (var entry in _fontFilters)
+                if (entry.Key != null)
+                    entry.Key.filterMode = entry.Value;
+            _fontFilters.Clear();
             GUI.EndGroup();
             GUI.matrix = previousMatrix;
             GUI.color = previousColor;
@@ -313,6 +324,21 @@ public sealed class TransferSettingsPanel
         // Draw last, outside the group so the arrow is not clipped at its edges.
         DrawPanelCursor(new Rect((Screen.width - width * scale) / 2,
             (Screen.height - height * scale) / 2, width * scale, height * scale));
+    }
+
+    private void SmoothFont(GUIStyle style)
+    {
+        if (Event.current.type != EventType.Repaint)
+            return;
+
+        var font = style.font ?? GUI.skin.font;
+        var texture = font != null && font.material != null ? font.material.mainTexture : null;
+        if (texture == null || _fontFilters.ContainsKey(texture))
+            return;
+
+        // Font atlases belong to the game; restore their filtering after drawing.
+        _fontFilters.Add(texture, texture.filterMode);
+        texture.filterMode = FilterMode.Bilinear;
     }
 
     private void PrepareFontStyles()
@@ -445,39 +471,23 @@ public sealed class TransferSettingsPanel
         if (Event.current.type != EventType.Repaint)
             return;
 
-        // Draw the rounded badge border and solid interior with the existing white texture.
+        // Unity's rounded-rectangle shader smooths both the outer and inner edges.
         const float radius = 6, border = 1.5f;
         var previousColor = GUI.color;
         try
         {
-            for (var y = 0; y < (int)rect.height; y++)
-            {
-                var edgeDistance = Mathf.Min(y + 0.5f, rect.height - y - 0.5f);
-                var outerInset = RoundedInset(edgeDistance, radius);
-                GUI.color = ShortcutForeground;
-                if (edgeDistance < border)
-                {
-                    GUI.DrawTexture(new Rect(rect.x + outerInset, rect.y + y, rect.width - 2 * outerInset, 1), Texture2D.whiteTexture);
-                    continue;
-                }
-                var innerInset = border + RoundedInset(edgeDistance - border, radius - border);
-                GUI.DrawTexture(new Rect(rect.x + outerInset, rect.y + y, innerInset - outerInset, 1), Texture2D.whiteTexture);
-                GUI.DrawTexture(new Rect(rect.xMax - innerInset, rect.y + y, innerInset - outerInset, 1), Texture2D.whiteTexture);
-                FillRect(new Rect(rect.x + innerInset, rect.y + y, rect.width - 2 * innerInset, 1), ShortcutBackground);
-            }
+            GUI.color = Color.white;
+            GUI.DrawTexture(rect, Texture2D.whiteTexture, ScaleMode.StretchToFill,
+                true, 0, ShortcutForeground, 0, radius);
+            var interior = new Rect(rect.x + border, rect.y + border,
+                rect.width - 2 * border, rect.height - 2 * border);
+            GUI.DrawTexture(interior, Texture2D.whiteTexture, ScaleMode.StretchToFill,
+                true, 0, ShortcutBackground, 0, radius - border);
         }
         finally
         {
             GUI.color = previousColor;
         }
-    }
-
-    private static float RoundedInset(float distance, float radius)
-    {
-        if (distance >= radius)
-            return 0;
-        var offset = radius - distance;
-        return radius - Mathf.Sqrt(radius * radius - offset * offset);
     }
 
     private void DrawPanelCursor(Rect panelBounds)

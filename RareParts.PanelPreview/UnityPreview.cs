@@ -15,6 +15,7 @@ public class Component
 }
 public class Font
 {
+    public Material material { get; } = new();
     public IntPtr Pointer => IntPtr.Zero;
     public string name => GUI.FontFamily.Name;
 }
@@ -87,7 +88,10 @@ public class Event
 }
 public enum ScaleMode { StretchToFill }
 public enum TextAnchor { UpperLeft, UpperCenter, MiddleLeft, MiddleCenter }
-public class Texture2D { public static readonly Texture2D whiteTexture = new(); }
+public enum FilterMode { Point, Bilinear, Trilinear }
+public class Texture { public FilterMode filterMode; }
+public class Material { public Texture mainTexture { get; } = new Texture2D(); }
+public class Texture2D : Texture { public static readonly Texture2D whiteTexture = new(); }
 public class RectOffset { public int top; }
 public class GUIStyleState { public Color textColor = Color.white; }
 public class GUIContent(string text) { public string text = text; }
@@ -119,6 +123,7 @@ public class GUIStyle
 }
 public class GUISkin
 {
+    public Font font = new();
     public GUIStyle label = new() { Kind = "label", alignment = TextAnchor.UpperLeft };
     public GUIStyle button = new() { Kind = "button", alignment = TextAnchor.MiddleCenter };
     public GUIStyle box = new() { Kind = "box", alignment = TextAnchor.UpperCenter, padding = new() { top = 4 } };
@@ -169,6 +174,31 @@ public static class GUI
         if (Event.current.type != EventType.Repaint) return;
         using var brush = new SolidBrush(color.Drawing);
         Graphics.FillRectangle(brush, ToScreen(rect));
+    }
+
+    public static void DrawTexture(Rect rect, Texture2D texture, ScaleMode mode,
+        bool alphaBlend, float imageAspect, Color tint, float borderWidth, float borderRadius)
+    {
+        if (Event.current.type != EventType.Repaint) return;
+        var bounds = ToScreen(rect);
+        var diameter = borderRadius * 2 * matrix.Scale;
+        using var path = new GraphicsPath();
+        path.AddArc(bounds.Left, bounds.Top, diameter, diameter, 180, 90);
+        path.AddArc(bounds.Right - diameter, bounds.Top, diameter, diameter, 270, 90);
+        path.AddArc(bounds.Right - diameter, bounds.Bottom - diameter, diameter, diameter, 0, 90);
+        path.AddArc(bounds.Left, bounds.Bottom - diameter, diameter, diameter, 90, 90);
+        path.CloseFigure();
+        var previousSmoothing = Graphics.SmoothingMode;
+        try
+        {
+            Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+            using var brush = new SolidBrush(tint.Drawing);
+            Graphics.FillPath(brush, path);
+        }
+        finally
+        {
+            Graphics.SmoothingMode = previousSmoothing;
+        }
     }
 
     public static void Label(Rect rect, string text, GUIStyle style)
