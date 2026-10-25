@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using CMS.UI;
 using CMS.UI.Windows;
 using HarmonyLib;
+using RareParts.Extensions;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -22,8 +23,14 @@ public sealed class TransferSettingsPanel
     private TransferRequest _transferRequested;
     private Font _gameFont;
     private float _nextFontLookup;
-    private GUIStyle _labelStyle, _buttonStyle, _boxStyle, _toggleStyle;
+    private GUIStyle _labelStyle, _buttonStyle, _titleStyle, _toggleStyle;
     private GUIStyle _actionStyle, _shortcutStyle;
+    private static readonly Color TitleBackground = new(49 / 255f, 49 / 255f, 49 / 255f, 0.97f);
+    private static readonly Color PanelBorder = new(111 / 255f, 111 / 255f, 110 / 255f, 0.97f);
+    private static readonly Color SeparatorColor = new(1f, 160 / 255f, 0f);
+    private static readonly Color ShortcutBackground = new(102 / 255f, 102 / 255f, 102 / 255f);
+    private static readonly Color ShortcutForeground = new(247 / 255f, 247 / 255f, 247 / 255f);
+    private static readonly Color ActionForeground = new(168 / 255f, 168 / 255f, 168 / 255f);
     private static TransferSettingsPanel _activePanel;
     private static int _blockInputThroughFrame = -1;
 
@@ -263,7 +270,16 @@ public sealed class TransferSettingsPanel
 
         //ShowCursor();
 
-        const float width = 860, height = 530;
+        const float height = 460, titleHeight = 56, bodyBottom = 383, actionY = 408;
+        const string collectLabel = "TRANSFER TO SHOPPING CART", returnLabel = "RETURN TO JUNK PILES", closeLabel = "CLOSE";
+        var collectShortcut = _config.TransferEntireJunkyardOrBarnKey.ToShortcutString();
+        var returnShortcut = $"SHIFT + {collectShortcut}";
+        var closeShortcut = _config.TransferSettingsKey.ToShortcutString();
+        var collectWidth = ActionWidth(collectShortcut, collectLabel);
+        var returnWidth = ActionWidth(returnShortcut, returnLabel);
+        var closeWidth = ActionWidth(closeShortcut, closeLabel);
+        // Measure labels and configurable shortcuts so the left-aligned row never overlaps.
+        var width = Mathf.Max(860, 40 + collectWidth + returnWidth + closeWidth + 48);
         var previousMatrix = GUI.matrix;
         var previousColor = GUI.color;
         var scale = Mathf.Min(1f, Mathf.Min(Screen.width / (width + 20), Screen.height / (height + 20)));
@@ -271,16 +287,15 @@ public sealed class TransferSettingsPanel
         GUI.BeginGroup(new Rect((Screen.width / scale - width) / 2, (Screen.height / scale - height) / 2, width, height));
         try
         {
-            GUI.color = new Color(0.12f, 0.12f, 0.12f, 1f);
-            GUI.DrawTexture(new Rect(0, 0, width, height), Texture2D.whiteTexture, ScaleMode.StretchToFill, false);
+            DrawPanelBackground(width, titleHeight, bodyBottom);
             GUI.color = Color.white;
-            DrawBox(new Rect(0, 0, width, height), "TRANSFER ALL ITEMS");
+            GUI.Label(new Rect(1, 1, width - 2, titleHeight - 1), "TRANSFER ALL ITEMS", _titleStyle);
             DrawSettings();
-            if (DrawAction(new Rect(20, 408, 560, 36), _config.TransferEntireJunkyardOrBarnKey.ToString(), "TRANSFER TO SHOPPING CART"))
+            if (DrawAction(new Rect(20, actionY, collectWidth, 36), collectShortcut, collectLabel))
                 _transferRequested = TransferRequest.Collect;
-            if (DrawAction(new Rect(20, 454, 560, 36), $"SHIFT + {_config.TransferEntireJunkyardOrBarnKey}", "RETURN TO JUNK PILES"))
+            if (DrawAction(new Rect(20 + collectWidth + 24, actionY, returnWidth, 36), returnShortcut, returnLabel))
                 _transferRequested = TransferRequest.Return;
-            if (DrawAction(new Rect(600, 454, 240, 36), _config.TransferSettingsKey.ToString(), "CLOSE"))
+            if (DrawAction(new Rect(20 + collectWidth + returnWidth + 48, actionY, closeWidth, 36), closeShortcut, closeLabel))
                 Close();
 
             // Also consume unused clicks/scrolls on the background for other
@@ -326,15 +341,44 @@ public sealed class TransferSettingsPanel
         // Copies keep other IMGUI overlays and the game's own styles unchanged.
         _labelStyle = CreateFontStyle(GUI.skin.label);
         _buttonStyle = CreateFontStyle(GUI.skin.button);
-        _boxStyle = CreateFontStyle(GUI.skin.box);
-        _boxStyle.fontSize += 1;
-        _boxStyle.padding.top += 12;
+        _titleStyle = CreateFontStyle(GUIStyle.none);
+        _titleStyle.fontSize = 29;
+        _titleStyle.alignment = TextAnchor.MiddleCenter;
+        _titleStyle.normal.textColor = Color.white;
         _toggleStyle = CreateFontStyle(GUI.skin.toggle);
         _actionStyle = CreateFontStyle(GUIStyle.none);
         _actionStyle.alignment = TextAnchor.MiddleLeft;
         _shortcutStyle = CreateFontStyle(GUIStyle.none);
         _shortcutStyle.alignment = TextAnchor.MiddleCenter;
-        _shortcutStyle.normal.textColor = Color.white;
+        _shortcutStyle.normal.textColor = ShortcutForeground;
+    }
+
+    private static void DrawPanelBackground(float width, float titleHeight, float bodyBottom)
+    {
+        if (Event.current.type != EventType.Repaint)
+            return;
+
+        FillRect(new Rect(1, 1, width - 2, titleHeight - 1), TitleBackground);
+        // Use the built-in texture for the gradient, avoiding native texture lifetime management.
+        var gradientHeight = (int)(bodyBottom - titleHeight - 3);
+        for (var y = 0; y < gradientHeight; y++)
+        {
+            var t = y / (float)(gradientHeight - 1);
+            var color = new Color((86 - 32 * t) / 255f, (86 - 34 * t) / 255f,
+                (85 - 34 * t) / 255f, 0.97f);
+            FillRect(new Rect(1, titleHeight + y, width - 2, 1), color);
+        }
+        FillRect(new Rect(0, 0, width, 1), PanelBorder);
+        FillRect(new Rect(0, 1, 1, bodyBottom - 4), PanelBorder);
+        FillRect(new Rect(width - 1, 1, 1, bodyBottom - 4), PanelBorder);
+        FillRect(new Rect(0, bodyBottom - 3, width, 3), SeparatorColor);
+        // The command row below the separator deliberately has no background or border.
+    }
+
+    private static void FillRect(Rect rect, Color color)
+    {
+        GUI.color = color;
+        GUI.DrawTexture(rect, Texture2D.whiteTexture);
     }
 
     private static Font FindMainFont(Component window)
@@ -364,7 +408,7 @@ public sealed class TransferSettingsPanel
     private GUIStyle CreateFontStyle(GUIStyle source)
     {
         var style = new GUIStyle(source);
-        style.fontSize = (source.fontSize > 0 ? source.fontSize : 13) + 3;
+        style.fontSize = (source.fontSize > 0 ? source.fontSize : 13) + 4;
         if (_gameFont != null)
         {
             style.font = _gameFont;
@@ -373,9 +417,13 @@ public sealed class TransferSettingsPanel
     }
 
     private void DrawLabel(Rect rect, string text) => GUI.Label(rect, text, _labelStyle);
-    private void DrawBox(Rect rect, string text) => GUI.Box(rect, text, _boxStyle);
     private bool DrawButton(Rect rect, string text) => GUI.Button(rect, text, _buttonStyle);
     private bool DrawToggle(Rect rect, bool value, string text) => GUI.Toggle(rect, value, text, _toggleStyle);
+
+    private float ShortcutWidth(string shortcut) => Mathf.Max(30, _shortcutStyle.CalcSize(new GUIContent(shortcut)).x + 16);
+
+    private float ActionWidth(string shortcut, string label) =>
+        ShortcutWidth(shortcut) + 12 + _actionStyle.CalcSize(new GUIContent(label)).x + 4;
 
     private bool DrawAction(Rect rect, string shortcut, string label)
     {
@@ -383,31 +431,30 @@ public sealed class TransferSettingsPanel
         // The invisible button retains IMGUI's press/release handling. Only the
         // shortcut badge and label are painted; the action has no background.
         var clicked = GUI.Button(rect, string.Empty, GUIStyle.none);
-        var badgeWidth = Mathf.Max(30, _shortcutStyle.CalcSize(new GUIContent(shortcut)).x + 16);
+        var badgeWidth = ShortcutWidth(shortcut);
         var badge = new Rect(rect.x, rect.y + 3, badgeWidth, 30);
-        DrawShortcutOutline(badge);
+        DrawShortcutBadge(badge);
         GUI.Label(badge, shortcut, _shortcutStyle);
-        _actionStyle.normal.textColor = hovered ? new Color(1f, 0.62f, 0f, 1f) : Color.white;
+        _actionStyle.normal.textColor = hovered ? SeparatorColor : ActionForeground;
         GUI.Label(new Rect(badge.xMax + 12, rect.y, rect.width - badgeWidth - 12, rect.height), label, _actionStyle);
         return clicked;
     }
 
-    private static void DrawShortcutOutline(Rect rect)
+    private static void DrawShortcutBadge(Rect rect)
     {
         if (Event.current.type != EventType.Repaint)
             return;
 
-        // Draw a rounded, hollow badge with the existing white texture. This
-        // avoids allocating a texture or adding a solid badge background.
+        // Draw the rounded badge border and solid interior with the existing white texture.
         const float radius = 6, border = 1.5f;
         var previousColor = GUI.color;
-        GUI.color = Color.white;
         try
         {
             for (var y = 0; y < (int)rect.height; y++)
             {
                 var edgeDistance = Mathf.Min(y + 0.5f, rect.height - y - 0.5f);
                 var outerInset = RoundedInset(edgeDistance, radius);
+                GUI.color = ShortcutForeground;
                 if (edgeDistance < border)
                 {
                     GUI.DrawTexture(new Rect(rect.x + outerInset, rect.y + y, rect.width - 2 * outerInset, 1), Texture2D.whiteTexture);
@@ -416,6 +463,7 @@ public sealed class TransferSettingsPanel
                 var innerInset = border + RoundedInset(edgeDistance - border, radius - border);
                 GUI.DrawTexture(new Rect(rect.x + outerInset, rect.y + y, innerInset - outerInset, 1), Texture2D.whiteTexture);
                 GUI.DrawTexture(new Rect(rect.xMax - innerInset, rect.y + y, innerInset - outerInset, 1), Texture2D.whiteTexture);
+                FillRect(new Rect(rect.x + innerInset, rect.y + y, rect.width - 2 * innerInset, 1), ShortcutBackground);
             }
         }
         finally
@@ -484,7 +532,7 @@ public sealed class TransferSettingsPanel
             _ => "Only rare repairable"
         };
         Row(70, "MODE", mode);
-        if (DrawButton(new Rect(600, 70, 240, 30), $"CHANGE ({_config.SwitchModeKey})"))
+        if (DrawButton(new Rect(600, 70, 240, 30), $"CHANGE ({_config.SwitchModeKey.ToShortcutString()})"))
             _transfer.SwitchTransferMode();
 
         Row(105, "MIN CONDITION", $"{_config.MinPartCondition}%");

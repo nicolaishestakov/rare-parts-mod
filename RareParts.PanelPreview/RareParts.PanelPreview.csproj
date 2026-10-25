@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>disable</ImplicitUsings>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../RareParts/TransferSettingsPanel.cs" Link="Shared/TransferSettingsPanel.cs" />
+    <Compile Include="../RareParts/Extensions/KeyCodeExtensions.cs" Link="Shared/KeyCodeExtensions.cs" />
+    <Compile Include="../RareParts/ITransferAllConfig.cs" Link="Shared/ITransferAllConfig.cs" />
+    <Compile Include="../RareParts.Core/PartsInfo.cs" Link="Shared/PartsInfo.cs" />
+  </ItemGroup>
+</Project>

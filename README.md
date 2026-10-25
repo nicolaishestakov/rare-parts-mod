@@ -32,6 +32,8 @@ For manual installation, use the `RareParts.Core.dll` copied alongside `RarePart
 
 ## Unit tests
 
+For a standalone Windows preview of the transfer panel, run `dotnet run --project RareParts.PanelPreview`. It uses the actual panel source with simulated game actions. See [preview setup and limitations](RareParts.PanelPreview/README.md).
+
 With the .NET 10 SDK installed, run:
 
 ```powershell

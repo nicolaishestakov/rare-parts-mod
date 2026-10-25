@@ -124,6 +124,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Config.cs" />
+    <Compile Include="ITransferAllConfig.cs" />
     <Compile Include="Debug.cs" />
     <Compile Include="Extensions\ItemExtensions.cs" />
     <Compile Include="Extensions\ListExtensions.cs" />
@@ -138,6 +139,7 @@
     <Compile Include="TempInventoryManager.cs" />
     <Compile Include="TransferAll.cs" />
     <Compile Include="TransferSettingsPanel.cs" />
+    <Compile Include="Extensions\KeyCodeExtensions.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\RareParts.Core\RareParts.Core.csproj">
