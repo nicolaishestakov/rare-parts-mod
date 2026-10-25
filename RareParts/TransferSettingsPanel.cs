@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using CMS.UI;
+using HarmonyLib;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace RareParts;
@@ -16,6 +18,47 @@ public sealed class TransferSettingsPanel
     private readonly ITransferAllConfig _config;
     private bool _onlyShoppingList;
     private bool _collectRequested;
+    private static TransferSettingsPanel _activePanel;
+    private static int _blockInputThroughFrame = -1;
+
+    // A small outlined arrow, drawn with the built-in white texture. No native
+    // texture allocation or game cursor/camera state needs to be managed.
+    private static readonly string[] PanelCursor =
+    [
+        "#",
+        " ###",
+        " #..###",
+        " #.....###",
+        "  #.......###",
+        "  #..........###",
+        "  #.............###",
+        "   #...............###",
+        "   #..................###",
+        "   #.....................###",
+        "    #......................#",
+        "    #....................##",
+        "    #...................#",
+        "     #................##",
+        "     #...............#",
+        "     #..............#",
+        "      #.............#",
+        "      #..............#",
+        "      #...............#",
+        "       #...............#",
+        "       #................#",
+        "       #.......##........#",
+        "        #.....#  #........#",
+        "        #....#    #........#",
+        "        #...#      #.......#",
+        "         #..#       #.....#",
+        "         #.#         #...#",
+        "         ##           #.#",
+        "                       #"
+    ];
+
+    // IMGUI and the game's EventSystem read input independently. Consuming an
+    // IMGUI event alone cannot prevent the game from also handling that click.
+    internal static bool BlocksGameInput => _activePanel != null || Time.frameCount <= _blockInputThroughFrame;
     
     // Note: the commented properties and related code was capturing mouse/camera so the panel could work in the 3D scene
     // (when normally the mouse is fixed in the center and the movement rotates the camera)
@@ -78,6 +121,7 @@ public sealed class TransferSettingsPanel
         // _disableMouseEvents = GameSettings.DisableMouseEvents;
 
         IsOpen = true;
+        _activePanel = this;
         //_player.isPlaying = false; //todo verify if needed
         // _windows.EnableGraphicsRaycasterAndBlock(false, true);
         // GameSettings.DisableMouseEvents = true;
@@ -92,6 +136,11 @@ public sealed class TransferSettingsPanel
             return;
 
         IsOpen = false;
+        if (_activePanel == this)
+            _activePanel = null;
+        // OnGUI can close after the game's Update, or collection can close before
+        // it. Keep the release from reaching the game in either execution order.
+        _blockInputThroughFrame = Time.frameCount + 1;
         _collectRequested = false;
         // if (_player != null)
         //     _player.isPlaying = _wasPlaying;
@@ -203,11 +252,15 @@ public sealed class TransferSettingsPanel
 
         const float width = 620, height = 460;
         var previousMatrix = GUI.matrix;
+        var previousColor = GUI.color;
         var scale = Mathf.Min(1f, Mathf.Min(Screen.width / (width + 20), Screen.height / (height + 20)));
         GUI.matrix = Matrix4x4.TRS(Vector3.zero, Quaternion.identity, new Vector3(scale, scale, 1));
         GUI.BeginGroup(new Rect((Screen.width / scale - width) / 2, (Screen.height / scale - height) / 2, width, height));
         try
         {
+            GUI.color = new Color(0.12f, 0.12f, 0.12f, 1f);
+            GUI.DrawTexture(new Rect(0, 0, width, height), Texture2D.whiteTexture, ScaleMode.StretchToFill, false);
+            GUI.color = Color.white;
             GUI.Box(new Rect(0, 0, width, height), "Whole barn / junkyard transfer");
             GUI.Label(new Rect(20, 30, 580, 25), "Collect from every pile into the shopping cart (purchase as usual).");
             DrawSettings();
@@ -216,11 +269,64 @@ public sealed class TransferSettingsPanel
                 _collectRequested = true;
             if (GUI.Button(new Rect(440, 408, 160, 32), $"Close ({_config.TransferSettingsKey})"))
                 Close();
+
+            // Also consume unused clicks/scrolls on the background for other
+            // IMGUI handlers. Game UI input is blocked separately below.
+            if (Event.current.isMouse || Event.current.type == EventType.ScrollWheel)
+                Event.current.Use();
         }
         finally
         {
             GUI.EndGroup();
             GUI.matrix = previousMatrix;
+            GUI.color = previousColor;
+        }
+
+        // Draw last, outside the group so the arrow is not clipped at its edges.
+        DrawPanelCursor(new Rect((Screen.width - width * scale) / 2,
+            (Screen.height - height * scale) / 2, width * scale, height * scale));
+    }
+
+    private void DrawPanelCursor(Rect panelBounds)
+    {
+        if (!IsOpen || Event.current.type != EventType.Repaint)
+            return;
+
+        var mouse = Input.mousePosition;
+        var position = new Vector2(mouse.x, Screen.height - mouse.y);
+        // Outside the opaque panel the original game cursor is still visible.
+        if (!panelBounds.Contains(position))
+            return;
+
+        var previousMatrix = GUI.matrix;
+        var previousColor = GUI.color;
+        try
+        {
+            GUI.matrix = Matrix4x4.identity;
+            const float pixelSize = 1f;
+            for (var y = 0; y < PanelCursor.Length; y++)
+            {
+                var row = PanelCursor[y];
+                for (var x = 0; x < row.Length;)
+                {
+                    var start = x;
+                    var color = row[x++];
+                    while (x < row.Length && row[x] == color)
+                        x++;
+                    if (color == ' ')
+                        continue;
+
+                    GUI.color = color == '#' ? new Color(0.4f, 0.4f, 0.36f, 1f) : Color.white;
+                    GUI.DrawTexture(new Rect(position.x + start * pixelSize,
+                        position.y + y * pixelSize, (x - start) * pixelSize, pixelSize),
+                        Texture2D.whiteTexture);
+                }
+            }
+        }
+        finally
+        {
+            GUI.matrix = previousMatrix;
+            GUI.color = previousColor;
         }
     }
 
@@ -268,4 +374,40 @@ public sealed class TransferSettingsPanel
     }
 
     private static string OnOff(bool value) => value ? "On" : "Off";
+}
+
+// Suppress dispatch rather than changing player/camera/raycaster state. There is
+// no captured game object to restore after a scene unload or during saving.
+[HarmonyPatch(typeof(EventSystem), "Update")]
+internal static class TransferPanelEventSystemPatch
+{
+    [HarmonyPrefix]
+    private static bool Prefix() => !TransferSettingsPanel.BlocksGameInput;
+}
+
+[HarmonyPatch]
+internal static class TransferPanelActionInputPatch
+{
+    [HarmonyTargetMethods]
+    private static IEnumerable<System.Reflection.MethodBase> TargetMethods()
+    {
+        // These actions can be polled directly, outside Unity's EventSystem.
+        string[] actions =
+        [
+            "GameplayActionButtonDown", "GameplayActionButtonUp", "GameplayActionButton",
+            "GameplayMechanicActionButtonDown", "GameplayMechanicActionButtonUp", "GameplayMechanicActionButton",
+            "UIEnterButtonDown", "UISubmitButtonDown", "UISubmitAltDown", "UICancelButtonDown"
+        ];
+        foreach (var action in actions)
+            yield return AccessTools.Method(typeof(InputManager), action);
+    }
+
+    [HarmonyPrefix]
+    private static bool Prefix(ref bool __result)
+    {
+        if (!TransferSettingsPanel.BlocksGameInput)
+            return true;
+        __result = false;
+        return false;
+    }
 }
