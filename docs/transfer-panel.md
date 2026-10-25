@@ -8,6 +8,8 @@ The panel displays settings relevant to whole-location collection. Warehouse IDs
 
 ## In-game verification
 
+- Use **Return collected items to junk piles** with inventory closed, inventory open, and a pile's collected tab open. It must return all items previously collected by this mod that remain in the shopping cart to their original piles, regardless of filters. Repeat with nothing to return and check for a single summary popup. Verify both inventory and pile tabs refresh.
+
 - At a barn and junkyard, open F7 while walking. Verify the cursor is usable and clicking the panel does not interact with the world. Close with F7, Escape, and Close; verify normal controls return.
 - Change mode and condition with both the panel buttons and their hotkeys. Reopen and verify values agree. Check condition limits at 0 and 100 and the existing 80/85/90 steps.
 - Collect with inventory closed, with inventory open, and with a pile's collected tab open. Each must collect from every pile into the shopping cart, never return collected items. Verify visible inventory tabs refresh.

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using CMS.UI;
+using CMS.UI.Windows;
 using HarmonyLib;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -17,7 +18,12 @@ public sealed class TransferSettingsPanel
     private readonly TransferAll _transfer;
     private readonly ITransferAllConfig _config;
     private bool _onlyShoppingList;
-    private bool _collectRequested;
+    private enum TransferRequest { None, Collect, Return }
+    private TransferRequest _transferRequested;
+    private Font _gameFont;
+    private float _nextFontLookup;
+    private GUIStyle _labelStyle, _buttonStyle, _boxStyle, _toggleStyle;
+    private GUIStyle _actionStyle, _shortcutStyle;
     private static TransferSettingsPanel _activePanel;
     private static int _blockInputThroughFrame = -1;
 
@@ -141,7 +147,7 @@ public sealed class TransferSettingsPanel
         // OnGUI can close after the game's Update, or collection can close before
         // it. Keep the release from reaching the game in either execution order.
         _blockInputThroughFrame = Time.frameCount + 1;
-        _collectRequested = false;
+        _transferRequested = TransferRequest.None;
         // if (_player != null)
         //     _player.isPlaying = _wasPlaying;
         // if (_windows != null)
@@ -165,11 +171,15 @@ public sealed class TransferSettingsPanel
             return;
         }
 
-        if (_collectRequested)
+        if (_transferRequested != TransferRequest.None)
         {
             // Execute once, outside IMGUI's multiple layout/repaint passes.
+            var request = _transferRequested;
             Close();
-            _transfer.CollectEntireJunkyardOrBarn(_onlyShoppingList);
+            if (request == TransferRequest.Return)
+                _transfer.ReturnEntireJunkyardOrBarn();
+            else
+                _transfer.CollectEntireJunkyardOrBarn(_onlyShoppingList);
             return;
         }
 
@@ -180,7 +190,8 @@ public sealed class TransferSettingsPanel
         if (Input.GetKeyUp(_config.SetPartConditionHigherKey))
             _config.SetPartConditionHigherBy10();
         if (Input.GetKeyUp(_config.TransferEntireJunkyardOrBarnKey))
-            _collectRequested = true;
+            _transferRequested = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift)
+                ? TransferRequest.Return : TransferRequest.Collect;
         //ShowCursor();
     }
 
@@ -248,9 +259,11 @@ public sealed class TransferSettingsPanel
         if (!IsOpen)
             return;
 
+        PrepareFontStyles();
+
         //ShowCursor();
 
-        const float width = 620, height = 460;
+        const float width = 860, height = 530;
         var previousMatrix = GUI.matrix;
         var previousColor = GUI.color;
         var scale = Mathf.Min(1f, Mathf.Min(Screen.width / (width + 20), Screen.height / (height + 20)));
@@ -261,13 +274,13 @@ public sealed class TransferSettingsPanel
             GUI.color = new Color(0.12f, 0.12f, 0.12f, 1f);
             GUI.DrawTexture(new Rect(0, 0, width, height), Texture2D.whiteTexture, ScaleMode.StretchToFill, false);
             GUI.color = Color.white;
-            GUI.Box(new Rect(0, 0, width, height), "Whole barn / junkyard transfer");
-            GUI.Label(new Rect(20, 30, 580, 25), "Collect from every pile into the shopping cart (purchase as usual).");
+            DrawBox(new Rect(0, 0, width, height), "TRANSFER ALL ITEMS");
             DrawSettings();
-            GUI.Label(new Rect(20, 364, 580, 25), $"Hotkeys: {_config.SwitchModeKey} mode, {_config.SetPartConditionLower} / {_config.SetPartConditionHigherKey} condition");
-            if (GUI.Button(new Rect(20, 408, 400, 32), "Transfer whole location to shopping cart"))
-                _collectRequested = true;
-            if (GUI.Button(new Rect(440, 408, 160, 32), $"Close ({_config.TransferSettingsKey})"))
+            if (DrawAction(new Rect(20, 408, 560, 36), _config.TransferEntireJunkyardOrBarnKey.ToString(), "TRANSFER TO SHOPPING CART"))
+                _transferRequested = TransferRequest.Collect;
+            if (DrawAction(new Rect(20, 454, 560, 36), $"SHIFT + {_config.TransferEntireJunkyardOrBarnKey}", "RETURN TO JUNK PILES"))
+                _transferRequested = TransferRequest.Return;
+            if (DrawAction(new Rect(600, 454, 240, 36), _config.TransferSettingsKey.ToString(), "CLOSE"))
                 Close();
 
             // Also consume unused clicks/scrolls on the background for other
@@ -285,6 +298,138 @@ public sealed class TransferSettingsPanel
         // Draw last, outside the group so the arrow is not clipped at its edges.
         DrawPanelCursor(new Rect((Screen.width - width * scale) / 2,
             (Screen.height - height * scale) / 2, width * scale, height * scale));
+    }
+
+    private void PrepareFontStyles()
+    {
+        // Look up the actual UI font rather than relying on an asset name or
+        // shipping an extracted copy. The inventory also supplies inactive text.
+        var fontChanged = false;
+        if (_gameFont == null && Time.unscaledTime >= _nextFontLookup)
+        {
+            _nextFontLookup = Time.unscaledTime + 1f;
+            var windows = WindowManager.Instance;
+            if (windows != null)
+            {
+                _gameFont = FindMainFont(windows.GetWindowByID<InventoryWindow>(WindowID.Inventory));
+                if (_gameFont == null)
+                    _gameFont = FindMainFont(windows.GetWindowByID<ItemsExchangeWindow>(WindowID.ItemsExchange));
+            }
+            fontChanged = _gameFont != null;
+            if (fontChanged)
+                MelonLoader.MelonLogger.Msg($"Transfer panel font: {_gameFont.name}");
+        }
+
+        if (_labelStyle != null && !fontChanged)
+            return;
+
+        // Copies keep other IMGUI overlays and the game's own styles unchanged.
+        _labelStyle = CreateFontStyle(GUI.skin.label);
+        _buttonStyle = CreateFontStyle(GUI.skin.button);
+        _boxStyle = CreateFontStyle(GUI.skin.box);
+        _boxStyle.fontSize += 1;
+        _boxStyle.padding.top += 12;
+        _toggleStyle = CreateFontStyle(GUI.skin.toggle);
+        _actionStyle = CreateFontStyle(GUIStyle.none);
+        _actionStyle.alignment = TextAnchor.MiddleLeft;
+        _shortcutStyle = CreateFontStyle(GUIStyle.none);
+        _shortcutStyle.alignment = TextAnchor.MiddleCenter;
+        _shortcutStyle.normal.textColor = Color.white;
+    }
+
+    private static Font FindMainFont(Component window)
+    {
+        if (window == null)
+            return null;
+
+        var counts = new Dictionary<System.IntPtr, int>();
+        Font selected = null;
+        var highestCount = 0;
+        foreach (var text in window.GetComponentsInChildren<Text>(true))
+        {
+            var font = text.font;
+            if (font == null)
+                continue;
+            counts.TryGetValue(font.Pointer, out var count);
+            counts[font.Pointer] = ++count;
+            if (count > highestCount)
+            {
+                selected = font;
+                highestCount = count;
+            }
+        }
+        return selected;
+    }
+
+    private GUIStyle CreateFontStyle(GUIStyle source)
+    {
+        var style = new GUIStyle(source);
+        style.fontSize = (source.fontSize > 0 ? source.fontSize : 13) + 3;
+        if (_gameFont != null)
+        {
+            style.font = _gameFont;
+        }
+        return style;
+    }
+
+    private void DrawLabel(Rect rect, string text) => GUI.Label(rect, text, _labelStyle);
+    private void DrawBox(Rect rect, string text) => GUI.Box(rect, text, _boxStyle);
+    private bool DrawButton(Rect rect, string text) => GUI.Button(rect, text, _buttonStyle);
+    private bool DrawToggle(Rect rect, bool value, string text) => GUI.Toggle(rect, value, text, _toggleStyle);
+
+    private bool DrawAction(Rect rect, string shortcut, string label)
+    {
+        var hovered = rect.Contains(Event.current.mousePosition);
+        // The invisible button retains IMGUI's press/release handling. Only the
+        // shortcut badge and label are painted; the action has no background.
+        var clicked = GUI.Button(rect, string.Empty, GUIStyle.none);
+        var badgeWidth = Mathf.Max(30, _shortcutStyle.CalcSize(new GUIContent(shortcut)).x + 16);
+        var badge = new Rect(rect.x, rect.y + 3, badgeWidth, 30);
+        DrawShortcutOutline(badge);
+        GUI.Label(badge, shortcut, _shortcutStyle);
+        _actionStyle.normal.textColor = hovered ? new Color(1f, 0.62f, 0f, 1f) : Color.white;
+        GUI.Label(new Rect(badge.xMax + 12, rect.y, rect.width - badgeWidth - 12, rect.height), label, _actionStyle);
+        return clicked;
+    }
+
+    private static void DrawShortcutOutline(Rect rect)
+    {
+        if (Event.current.type != EventType.Repaint)
+            return;
+
+        // Draw a rounded, hollow badge with the existing white texture. This
+        // avoids allocating a texture or adding a solid badge background.
+        const float radius = 6, border = 1.5f;
+        var previousColor = GUI.color;
+        GUI.color = Color.white;
+        try
+        {
+            for (var y = 0; y < (int)rect.height; y++)
+            {
+                var edgeDistance = Mathf.Min(y + 0.5f, rect.height - y - 0.5f);
+                var outerInset = RoundedInset(edgeDistance, radius);
+                if (edgeDistance < border)
+                {
+                    GUI.DrawTexture(new Rect(rect.x + outerInset, rect.y + y, rect.width - 2 * outerInset, 1), Texture2D.whiteTexture);
+                    continue;
+                }
+                var innerInset = border + RoundedInset(edgeDistance - border, radius - border);
+                GUI.DrawTexture(new Rect(rect.x + outerInset, rect.y + y, innerInset - outerInset, 1), Texture2D.whiteTexture);
+                GUI.DrawTexture(new Rect(rect.xMax - innerInset, rect.y + y, innerInset - outerInset, 1), Texture2D.whiteTexture);
+            }
+        }
+        finally
+        {
+            GUI.color = previousColor;
+        }
+    }
+
+    private static float RoundedInset(float distance, float radius)
+    {
+        if (distance >= radius)
+            return 0;
+        var offset = radius - distance;
+        return radius - Mathf.Sqrt(radius * radius - offset * offset);
     }
 
     private void DrawPanelCursor(Rect panelBounds)
@@ -338,18 +483,18 @@ public sealed class TransferSettingsPanel
             TransferAll.Mode.ByConditionSkipUnrepairable => "By condition, skip unrepairable",
             _ => "Only rare repairable"
         };
-        Row(70, "Mode", mode);
-        if (GUI.Button(new Rect(500, 70, 100, 25), "Change"))
+        Row(70, "MODE", mode);
+        if (DrawButton(new Rect(600, 70, 240, 30), $"CHANGE ({_config.SwitchModeKey})"))
             _transfer.SwitchTransferMode();
 
-        Row(105, "Minimum condition", $"{_config.MinPartCondition}%");
-        if (GUI.Button(new Rect(500, 105, 45, 25), "-"))
+        Row(105, "MIN CONDITION", $"{_config.MinPartCondition}%");
+        if (DrawButton(new Rect(600, 105, 110, 30), "-"))
             _config.SetPartConditionLowerBy10();
-        if (GUI.Button(new Rect(555, 105, 45, 25), "+"))
+        if (DrawButton(new Rect(730, 105, 110, 30), "+"))
             _config.SetPartConditionHigherBy10();
 
-        _onlyShoppingList = GUI.Toggle(new Rect(20, 145, 580, 25), _onlyShoppingList,
-            "Shopping-list items only (maps and cases still included)");
+        _onlyShoppingList = DrawToggle(new Rect(20, 145, 820, 30), _onlyShoppingList,
+            "Shopping-list items only");
         Row(185, "Maps / cases filter (config)", OnOff(_config.TransferMapsOrCasesOnlyAtBarnOrJunkyard));
         Row(215, "Parts filter (config)", OnOff(_config.TransferPartsOnlyAtBarnOrJunkyard));
         Row(245, "Repair thresholds", $"Normal: {PartsInfo.NormalRepairablePartsMinCondition * 100:0}%   Special: {PartsInfo.SpecialRepairablePartsMinCondition * 100:0}%");
@@ -364,13 +509,13 @@ public sealed class TransferSettingsPanel
                   (_transfer.TransferMode == TransferAll.Mode.OnlyRareRepairable
                       ? "Minimum condition is ignored in rare repairable mode."
                       : "Other parts use the selected mode and minimum condition.");
-        GUI.Label(new Rect(20, 290, 580, 60), explanation);
+        DrawLabel(new Rect(20, 290, 820, 70), explanation);
     }
 
-    private static void Row(float y, string label, string value)
+    private void Row(float y, string label, string value)
     {
-        GUI.Label(new Rect(20, y, 235, 25), label);
-        GUI.Label(new Rect(255, y, 345, 25), value);
+        DrawLabel(new Rect(20, y, 250, 30), label);
+        DrawLabel(new Rect(280, y, 310, 30), value);
     }
 
     private static string OnOff(bool value) => value ? "On" : "Off";

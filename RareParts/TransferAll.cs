@@ -133,6 +133,27 @@ public class TransferAll
             MoveEntireBarnOrJunkyard(GetShopListItems(), onlyShopListItems, collectOnly: true);
     }
 
+    /// <summary>Return items collected by this mod to their original piles, regardless of the active tab.</summary>
+    public void ReturnEntireJunkyardOrBarn()
+    {
+        if (!IsBarnOrJunkyard || CheckIfInputIsFocused())
+            return;
+
+        var count = 0;
+        foreach (var junk in UnityEngine.Object.FindObjectsOfType<Junk>())
+            count += MoveCollectedInventoryItemsBackToJunkStash(junk, false);
+
+        Popup(count > 0 ? $"Items returned to junk piles: {count}" : "No collected items to return.");
+        MelonLogger.Msg($"Items returned from Shopping Cart to junk piles: {count}");
+        if (count > 0)
+        {
+            GetInventoryWindow(true)?.Refresh();
+            var exchange = GetItemsExchangeWindow(true);
+            exchange?.foundTab?.Refresh();
+            exchange?.collectedTab?.Refresh();
+        }
+    }
+
     public void EnterScene(int buildIndex, string sceneName)
     {
         if (buildIndex == -1)
@@ -969,7 +990,8 @@ public class TransferAll
 
         if (cachedJunkItems.Count == 0 && cachedJunkGroups.Count == 0)
         {
-            Popup("No items to move");
+            if (showPopup)
+                Popup("No items to move");
             MelonLogger.Msg("No items to move");
             return 0;
         }
@@ -1056,22 +1078,7 @@ public class TransferAll
         // This means the user wants to move all the junk back to the junk piles (undo move).
         if (!collectOnly && inventoryWindow is not null)
         {
-            // Loop through the junk piles, get the temporary list that corresponds and then
-            // move the items back to their respective junk piles.
-            foreach (var junk in junks)
-            {
-                junkTotalCount += MoveCollectedInventoryItemsBackToJunkStash(junk, false);
-            }
-
-            // Check that the Temp Inventory is empty.
-            if (junkTotalCount > 0)
-            {
-                // Show the user the number of items and groups that were moved.
-                Popup($"Junk items moved: {junkTotalCount}");
-                MelonLogger.Msg($"Junk items moved: {junkTotalCount} from Shopping Cart");
-                inventoryWindow.Refresh();
-            }
-
+            ReturnEntireJunkyardOrBarn();
             return;
         }
         
