@@ -25,6 +25,32 @@ public class TransferAll
     }
 
     private readonly ITransferAllConfig _config;
+    private TransferSettingsPanel _transferSettingsPanel;
+
+    /// <returns>True when the modal panel is shown.</returns>
+    public bool Update()
+    {
+        if (_transferSettingsPanel is null)
+        {
+            return false;
+        }
+        
+        // Keep shortcuts suppressed for the closing frame as well.
+        var blockTransferShortcuts = _transferSettingsPanel.IsOpen;
+        _transferSettingsPanel.Update();
+        if (UnityEngine.Input.GetKeyUp(_config.TransferSettingsKey))
+        {
+            _transferSettingsPanel.Toggle();
+            blockTransferShortcuts = true;
+        }
+        return blockTransferShortcuts || _transferSettingsPanel.IsOpen;
+    }
+
+    public void LateUpdate() => _transferSettingsPanel?.LateUpdate();
+
+    public void DrawGUI() => _transferSettingsPanel?.Draw();
+
+    public void CloseSettingsPanel() => _transferSettingsPanel?.Close();
 
     private readonly TempInventoryManager _tempInventoryManager;
 
@@ -97,6 +123,16 @@ public class TransferAll
 
     public Mode TransferMode { get; private set; } = Mode.OnlyRareRepairable;
 
+    public bool IsBarnOrJunkyard => _currentScene.IsBarnOrJunkyard;
+
+    // The panel always collects; unlike the legacy hotkey it never infers an undo
+    // operation from whichever inventory tab happens to be open.
+    public void CollectEntireJunkyardOrBarn(bool onlyShopListItems)
+    {
+        if (IsBarnOrJunkyard && !CheckIfInputIsFocused())
+            MoveEntireBarnOrJunkyard(GetShopListItems(), onlyShopListItems, collectOnly: true);
+    }
+
     public void EnterScene(int buildIndex, string sceneName)
     {
         if (buildIndex == -1)
@@ -112,6 +148,7 @@ public class TransferAll
             _tempItems.Clear();
             _tempGroups.Clear();
             _tempInventoryManager.Invalidate();
+            _transferSettingsPanel = new TransferSettingsPanel(this, _config);
             MelonLogger.Msg($"Entered {sceneName}");
         }
     }
@@ -126,9 +163,12 @@ public class TransferAll
         // Clear the temporary dictionaries when the user leaves the scene.
         if (new Scene(sceneName).IsBarnOrJunkyard)
         {
+            _currentScene.UpdateScene(string.Empty);
             _tempItems.Clear();
             _tempGroups.Clear();
             _tempInventoryManager.Clear();
+            _transferSettingsPanel?.Close();
+            _transferSettingsPanel = null;
             MelonLogger.Msg($"Leaving {sceneName}");
         }
     }
@@ -384,7 +424,7 @@ public class TransferAll
     /// the mod should do nothing.
     /// </summary>
     /// <returns>(bool) True if the Search/Input Field is being used.</returns>
-    private static bool CheckIfInputIsFocused()
+    internal static bool CheckIfInputIsFocused()
     {
         var inputFields = UnityEngine.Object.FindObjectsOfType<InputField>();
         foreach (var inputField in inputFields)
@@ -981,7 +1021,7 @@ public class TransferAll
     /// Method to move all items and groups from all the Junk Stashes to the Temp Inventory of the Barn or Junkyard.
     /// Or back to the stashes, if temp inventory (aka shopping cart) is opened.
     /// </summary>
-    private void MoveEntireBarnOrJunkyard(HashSet<string> includeShopListItems, bool onlyShopListItems)
+    private void MoveEntireBarnOrJunkyard(HashSet<string> includeShopListItems, bool onlyShopListItems, bool collectOnly = false)
     {
         MelonLogger.Msg($"MoveEntireBarnOrJunkyard, including seeking for {includeShopListItems.Count} shop list items");
         
@@ -990,7 +1030,7 @@ public class TransferAll
 
         // Check if the Junk Items Window (ItemsExchangeWindow) is displayed.
         // This means the user wants to move all the junk from the open junk pile.
-        if (itemsExchangeWindow is not null &&
+        if (!collectOnly && itemsExchangeWindow is not null &&
             itemsExchangeWindow.currentTab == 1) // Only work if the Shopping Cart Tab is displayed.
         {
             var junkInventory = itemsExchangeWindow.junk;
@@ -1014,7 +1054,7 @@ public class TransferAll
         
         // Check if the Temp Inventory window is displayed.
         // This means the user wants to move all the junk back to the junk piles (undo move).
-        if (inventoryWindow is not null)
+        if (!collectOnly && inventoryWindow is not null)
         {
             // Loop through the junk piles, get the temporary list that corresponds and then
             // move the items back to their respective junk piles.
@@ -1049,6 +1089,7 @@ public class TransferAll
             
             itemsExchangeWindow?.foundTab?.Refresh();
             itemsExchangeWindow?.collectedTab?.Refresh();
+            inventoryWindow?.Refresh();
         }
         else
         {

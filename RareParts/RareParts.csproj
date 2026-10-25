@@ -82,6 +82,9 @@
       <HintPath>$(Cms2021InstallDir)\MelonLoader\MelonLoader.dll</HintPath>
     </Reference>
     <Reference Include="System" />
+    <Reference Include="Rewired_Core">
+      <HintPath>$(Cms2021InstallDir)\MelonLoader\Managed\Rewired_Core.dll</HintPath>
+    </Reference>
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -131,6 +134,7 @@
     <Compile Include="RepairScrap.cs" />
     <Compile Include="TempInventoryManager.cs" />
     <Compile Include="TransferAll.cs" />
+    <Compile Include="TransferSettingsPanel.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\RareParts.Core\RareParts.Core.csproj">

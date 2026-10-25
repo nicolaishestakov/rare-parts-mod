@@ -14,6 +14,8 @@ namespace RareParts
         /// User setting for the key to transfer all the junk from the Barn or Junkyard.
         /// </summary>
         KeyCode TransferEntireJunkyardOrBarnKey { get; }
+
+        KeyCode TransferSettingsKey { get; }
         
         /// <summary>
         /// User setting for the key to set the condition of parts percentage lower by 10%.
@@ -939,6 +941,9 @@ namespace RareParts
         /// </summary>
         public KeyCode TransferEntireJunkyardOrBarnKey => _transferEntireJunkyardOrBarnKey.Value;
         private readonly MelonPreferences_Entry<KeyCode> _transferEntireJunkyardOrBarnKey;
+
+        public KeyCode TransferSettingsKey => _transferSettingsKey.Value;
+        private readonly MelonPreferences_Entry<KeyCode> _transferSettingsKey;
         
         /// <summary>
         /// User setting for the key to set the condition of parts percentage lower by 10%.
@@ -1101,6 +1106,8 @@ namespace RareParts
                 description: "https://docs.unity3d.com/ScriptReference/KeyCode.html for KeyCodes." + Il2CppSystem.Environment.NewLine + "Press This Key to transfer all current items and groups.");
             _transferEntireJunkyardOrBarnKey = transferAllCategory.CreateEntry(nameof(TransferEntireJunkyardOrBarnKey), KeyCode.L,
                 description: "ONLY WORKS AT BARN AND JUNKYARD." + Il2CppSystem.Environment.NewLine + "Press This Key to transfer all items and groups from ALL junk stashes.");
+            _transferSettingsKey = transferAllCategory.CreateEntry(nameof(TransferSettingsKey), KeyCode.F7,
+                description: "Open or close the whole barn/junkyard transfer settings panel.");
             _setPartConditionLower = transferAllCategory.CreateEntry(nameof(SetPartConditionLower), KeyCode.Minus,
                 description: "Press This Key to set the condition percentage lower by 10%." + Il2CppSystem.Environment.NewLine + "This value is saved to MinPartCondition value below on exit.");
             _setPartConditionHigherKey = transferAllCategory.CreateEntry(nameof(SetPartConditionHigherKey), KeyCode.Equals,

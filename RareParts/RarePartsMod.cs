@@ -85,7 +85,12 @@ public class RarePartsMod : MelonMod
 
     public override void OnUpdate()
     {
-        UpdatePlaytimeOverlay();
+        if (_config.IsDebugMode)
+        {
+            UpdatePlaytimeOverlay();
+        }
+
+        var blockTransferShortcuts = _transferAll?.Update() == true;
 
 #if !DEBUG
         if (_config.IsDebugMode)
@@ -104,14 +109,6 @@ public class RarePartsMod : MelonMod
             }
         }
 
-        if (Input.GetKeyUp(_config.MoveShoppingListToInventoryKey))
-        {
-            _logger.Information($"Command: Move Shopping List from Warehouse to Inventory");
-            _transferAll.MoveShoppingListFromWarehouseToInventory(IsShiftPressed() 
-                ? TransferAll.MoveShoppingListMode.MoveRareUnrepairable 
-                : TransferAll.MoveShoppingListMode.MoveNewOrRepairableAndDeleteFromShoppingList);
-        }
-
         if (Input.GetKeyUp(_config.ScrapRepairKey))
         {
             _repairScrap.Repair();
@@ -122,31 +119,42 @@ public class RarePartsMod : MelonMod
             _partsToFixToShoppingList.Transfer();
         }
 
-        if (Input.GetKeyUp(_config.TransferAllItemsAndGroupsKey))
+        if (!blockTransferShortcuts && _transferAll is not null)
         {
-            _transferAll.TransferAllItemsAndGroups(IsShiftPressed());
-        }
+            if (Input.GetKeyUp(_config.MoveShoppingListToInventoryKey))
+            {
+                _logger.Information($"Command: Move Shopping List from Warehouse to Inventory");
+                _transferAll.MoveShoppingListFromWarehouseToInventory(IsShiftPressed() 
+                    ? TransferAll.MoveShoppingListMode.MoveRareUnrepairable 
+                    : TransferAll.MoveShoppingListMode.MoveNewOrRepairableAndDeleteFromShoppingList);
+            }
+            
+            if (Input.GetKeyUp(_config.TransferAllItemsAndGroupsKey))
+            {
+                _transferAll.TransferAllItemsAndGroups(IsShiftPressed());
+            }
 
-        if (Input.GetKeyUp(_config.TransferEntireJunkyardOrBarnKey))
-        {
-            _transferAll.TransferEntireJunkyardOrBarn(IsShiftPressed());
-        }
+            if (Input.GetKeyUp(_config.TransferEntireJunkyardOrBarnKey))
+            {
+                _transferAll.TransferEntireJunkyardOrBarn(IsShiftPressed());
+            }
 
-        if (Input.GetKeyUp(_config.SwitchModeKey))
-        {
-            _transferAll.SwitchTransferMode();
-        }
+            if (Input.GetKeyUp(_config.SwitchModeKey))
+            {
+                _transferAll.SwitchTransferMode();
+            }
 
-        if (Input.GetKeyUp(_config.SetPartConditionLower))
-        {
-            _config.SetPartConditionLowerBy10();
-            _transferAll.OnMinPartConditionChanged();
-        }
+            if (Input.GetKeyUp(_config.SetPartConditionLower))
+            {
+                _config.SetPartConditionLowerBy10();
+                _transferAll.OnMinPartConditionChanged();
+            }
 
-        if (Input.GetKeyUp(_config.SetPartConditionHigherKey))
-        {
-            _config.SetPartConditionHigherBy10();
-            _transferAll.OnMinPartConditionChanged();
+            if (Input.GetKeyUp(_config.SetPartConditionHigherKey))
+            {
+                _config.SetPartConditionHigherBy10();
+                _transferAll.OnMinPartConditionChanged();
+            }    
         }
 
         UpdateButtonsState();
@@ -166,12 +174,15 @@ public class RarePartsMod : MelonMod
             : $"Profile playtime (raw): {profile.PlayTime}";
     }
 
+    public override void OnLateUpdate() => _transferAll?.LateUpdate();
+
     public override void OnGUI()
     {
         if (_profilePlaytimeText != null)
             GUI.Box(new Rect(20, 20, 300, 32), _profilePlaytimeText);
 
         DrawScrapRepairOverlay();
+        _transferAll?.DrawGUI();
     }
 
     private void DrawScrapRepairOverlay()
@@ -312,6 +323,7 @@ public class RarePartsMod : MelonMod
     
     public override void OnSceneWasLoaded(int buildIndex, string sceneName)
     {
+        _transferAll?.CloseSettingsPanel();
         {
             //todo not quite sure what this is for
             GameSettings.CanShowPopups = true;
@@ -338,4 +350,6 @@ public class RarePartsMod : MelonMod
     {
         _transferAll?.LeaveScene(buildIndex, sceneName);
     }
+
+    public override void OnDeinitializeMelon() => _transferAll?.CloseSettingsPanel();
 }
