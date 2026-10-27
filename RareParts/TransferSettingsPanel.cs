@@ -18,7 +18,6 @@ public sealed class TransferSettingsPanel
 {
     private readonly TransferAll _transfer;
     private readonly ITransferAllConfig _config;
-    private bool _onlyShoppingList;
     private string _nameFilter = string.Empty;
     private bool _resetTextFocus;
     private const string NameFilterControl = "TransferNameFilter";
@@ -29,7 +28,7 @@ public sealed class TransferSettingsPanel
     private TransferRequest _transferRequested;
     private Font _gameFont;
     private float _nextFontLookup;
-    private GUIStyle _labelStyle, _buttonStyle, _titleStyle, _toggleStyle, _textFieldStyle;
+    private GUIStyle _labelStyle, _buttonStyle, _titleStyle, _textFieldStyle;
     private GUIStyle _actionStyle, _shortcutStyle;
     private readonly Dictionary<Texture, FilterMode> _fontFilters = new();
     private static readonly Color TitleBackground = new(49 / 255f, 49 / 255f, 49 / 255f, 0.97f);
@@ -195,7 +194,7 @@ public sealed class TransferSettingsPanel
             if (request == TransferRequest.Return)
                 _transfer.ReturnEntireJunkyardOrBarn();
             else
-                _transfer.CollectEntireJunkyardOrBarn(_onlyShoppingList, _nameFilter);
+                _transfer.CollectEntireJunkyardOrBarn(_nameFilter);
             return;
         }
 
@@ -308,7 +307,6 @@ public sealed class TransferSettingsPanel
             SmoothFont(_labelStyle);
             SmoothFont(_buttonStyle);
             SmoothFont(_titleStyle);
-            SmoothFont(_toggleStyle);
             SmoothFont(_actionStyle);
             SmoothFont(_shortcutStyle);
             SmoothFont(_textFieldStyle);
@@ -389,10 +387,9 @@ public sealed class TransferSettingsPanel
         _labelStyle = CreateFontStyle(GUI.skin.label);
         _buttonStyle = CreateFontStyle(GUI.skin.button);
         _titleStyle = CreateFontStyle(GUIStyle.none);
-        _titleStyle.fontSize = 29;
+        _titleStyle.fontSize = 30;
         _titleStyle.alignment = TextAnchor.MiddleCenter;
         _titleStyle.normal.textColor = Color.white;
-        _toggleStyle = CreateFontStyle(GUI.skin.toggle);
         _textFieldStyle = CreateFontStyle(GUI.skin.textField);
         _actionStyle = CreateFontStyle(GUIStyle.none);
         _actionStyle.alignment = TextAnchor.MiddleLeft;
@@ -456,7 +453,7 @@ public sealed class TransferSettingsPanel
     private GUIStyle CreateFontStyle(GUIStyle source)
     {
         var style = new GUIStyle(source);
-        style.fontSize = (source.fontSize > 0 ? source.fontSize : 13) + 4;
+        style.fontSize = (source.fontSize > 0 ? source.fontSize : 13) + 5;
         if (_gameFont != null)
         {
             style.font = _gameFont;
@@ -466,7 +463,6 @@ public sealed class TransferSettingsPanel
 
     private void DrawLabel(Rect rect, string text) => GUI.Label(rect, text, _labelStyle);
     private bool DrawButton(Rect rect, string text) => GUI.Button(rect, text, _buttonStyle);
-    private bool DrawToggle(Rect rect, bool value, string text) => GUI.Toggle(rect, value, text, _toggleStyle);
 
     private float ShortcutWidth(string shortcut) => Mathf.Max(30, _shortcutStyle.CalcSize(new GUIContent(shortcut)).x + 16);
 
@@ -561,6 +557,7 @@ public sealed class TransferSettingsPanel
         {
             TransferAll.Mode.ByCondition => "By condition",
             TransferAll.Mode.ByConditionSkipUnrepairable => "By condition, skip unrepairable",
+            TransferAll.Mode.ShopListItemsOnly => "Shopping-list items only",
             _ => "Only rare repairable"
         };
         Row(70, "MODE", mode);
@@ -573,8 +570,6 @@ public sealed class TransferSettingsPanel
         if (DrawButton(new Rect(730, 105, 110, 30), "+"))
             _config.SetPartConditionHigherBy10();
 
-        _onlyShoppingList = DrawToggle(new Rect(20, 145, 820, 30), _onlyShoppingList,
-            "Shopping-list items only");
         Row(185, "Maps / cases filter (config)", OnOff(_config.TransferMapsOrCasesOnlyAtBarnOrJunkyard));
         Row(215, "Parts filter (config)", OnOff(_config.TransferPartsOnlyAtBarnOrJunkyard));
         Row(245, "Repair thresholds", $"Normal: {PartsInfo.NormalRepairablePartsMinCondition * 100:0}%   Special: {PartsInfo.SpecialRepairablePartsMinCondition * 100:0}%");
@@ -582,10 +577,11 @@ public sealed class TransferSettingsPanel
         GUI.SetNextControlName(NameFilterControl);
         _nameFilter = GUI.TextField(NameFilterRect, _nameFilter, _textFieldStyle);
 
-        var specialFilter = !_onlyShoppingList &&
+        var onlyShoppingList = _transfer.TransferMode == TransferAll.Mode.ShopListItemsOnly;
+        var specialFilter = !onlyShoppingList &&
             (_config.TransferMapsOrCasesOnlyAtBarnOrJunkyard || _config.TransferPartsOnlyAtBarnOrJunkyard);
-        var explanation = _onlyShoppingList
-            ? "Shopping-list matches of any condition, plus maps and cases.\nMode, minimum condition and config filters are ignored."
+        var explanation = onlyShoppingList
+            ? "Shopping-list matches of any condition, plus maps and cases.\nMinimum condition and config filters are ignored."
             : specialFilter
                 ? "Config filters select their combined categories directly.\nMode, condition and shopping-list inclusion are bypassed."
                 : "Shopping-list matches, maps and cases are always included.\n" +

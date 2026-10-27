@@ -138,7 +138,7 @@ public class RarePartsMod : MelonMod
 
             if (Input.GetKeyUp(_config.TransferEntireJunkyardOrBarnKey))
             {
-                _transferAll.TransferEntireJunkyardOrBarn(IsShiftPressed());
+                _transferAll.TransferEntireJunkyardOrBarn();
             }
 
             if (Input.GetKeyUp(_config.SwitchModeKey))

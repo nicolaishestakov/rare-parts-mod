@@ -76,10 +76,11 @@ internal static class Program
         }
         using (surface.Snapshot()) { }
         Click(700, 85);
+        Check(surface.Transfer.TransferMode == TransferAll.Mode.ShopListItemsOnly, "Mode button did not select shopping-list-only.");
+        Click(700, 85);
         Check(surface.Transfer.TransferMode == TransferAll.Mode.ByCondition, "Mode button did not cycle.");
         Click(780, 120);
         Check(surface.Config.MinPartCondition == 10, "Condition + button failed.");
-        Click(100, 158);
         Click(400, 295);
         Check(surface.Panel.IsEditingText, "Name filter did not receive focus.");
         foreach (var character in "oil")
@@ -92,9 +93,12 @@ internal static class Program
         Check(surface.Panel.IsOpen && surface.Transfer.CollectionCalls == 0 &&
               surface.Transfer.TransferMode == TransferAll.Mode.ByCondition && surface.Config.MinPartCondition == 10,
             "Typing in the name filter triggered a shortcut.");
+        Click(700, 85);
+        Click(700, 85);
+        Click(700, 85);
         Click(250, 425);
         Check(surface.Transfer.CollectionCalls == 1 && surface.Transfer.LastShoppingListOnly,
-            "Collection must execute once with the checkbox value.");
+            "Collection must execute once with the selected shopping-list mode.");
         Check(surface.Transfer.LastNameFilter == "oil", "Name filter was not passed to collection.");
         Check(!surface.Panel.IsOpen, "Collection should close the panel.");
         surface.Tick();
@@ -106,6 +110,12 @@ internal static class Program
         surface.ReleaseKey(KeyCode.L, shift: true);
         surface.Tick();
         Check(surface.Transfer.ReturnCalls == 2, "Shift+L should return.");
+        surface.Panel.Open();
+        Click(700, 85);
+        surface.ReleaseKey(KeyCode.L);
+        surface.Tick();
+        Check(surface.Transfer.CollectionCalls == 2 && !surface.Transfer.LastShoppingListOnly,
+            "Leaving shopping-list mode must stop filtering to shopping-list items.");
         surface.Panel.Open();
         Click(700, 425);
         Check(!surface.Panel.IsOpen, "Close button failed.");

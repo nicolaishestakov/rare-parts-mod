@@ -118,7 +118,8 @@ public class TransferAll
     {
         ByCondition,
         ByConditionSkipUnrepairable,
-        OnlyRareRepairable
+        OnlyRareRepairable,
+        ShopListItemsOnly
     }
 
     public Mode TransferMode { get; private set; } = Mode.OnlyRareRepairable;
@@ -127,10 +128,10 @@ public class TransferAll
 
     // The panel always collects; unlike the legacy hotkey it never infers an undo
     // operation from whichever inventory tab happens to be open.
-    public void CollectEntireJunkyardOrBarn(bool onlyShopListItems, string nameFilter = null)
+    public void CollectEntireJunkyardOrBarn(string nameFilter = null)
     {
         if (IsBarnOrJunkyard && !CheckIfInputIsFocused())
-            MoveEntireBarnOrJunkyard(GetShopListItems(), onlyShopListItems, collectOnly: true,
+            MoveEntireBarnOrJunkyard(GetShopListItems(), collectOnly: true,
                 nameFilter: nameFilter?.Trim());
     }
 
@@ -195,7 +196,7 @@ public class TransferAll
         }
     }
     
-    public void TransferAllItemsAndGroups(bool commandWithModifier)
+    public void TransferAllItemsAndGroups(bool moveOnlyDuplicateItems)
     {
         // Check if the user is currently using the Search box.
         if (!CheckIfInputIsFocused())
@@ -206,7 +207,7 @@ public class TransferAll
                 if (IsWarehouseUnlocked)
                 {
                     // Do work on the Inventory or Warehouse.
-                    MoveInventoryOrWarehouseItems(moveOnlyDuplicateItems: commandWithModifier);
+                    MoveInventoryOrWarehouseItems(moveOnlyDuplicateItems);
                 }
                 else
                 {
@@ -219,7 +220,7 @@ public class TransferAll
             else if (_currentScene.IsBarnOrJunkyard)
             {
                 // Do work on the Junk and TempInventory.
-                MoveBarnOrJunkyardStashItems(GetShopListItems(), onlyShopListItems: commandWithModifier);
+                MoveBarnOrJunkyardStashItems(GetShopListItems());
             }
             else
             {
@@ -234,7 +235,7 @@ public class TransferAll
         }
     }
 
-    public void TransferEntireJunkyardOrBarn(bool onlyShopListItems)
+    public void TransferEntireJunkyardOrBarn()
     {
         // Check if the user is currently using the Seach box.
         if (!CheckIfInputIsFocused())
@@ -243,7 +244,7 @@ public class TransferAll
             if (_currentScene.IsBarnOrJunkyard)
             {
                 // Do work on the Junk and TempInventory.
-                MoveEntireBarnOrJunkyard(GetShopListItems(), onlyShopListItems);
+                MoveEntireBarnOrJunkyard(GetShopListItems());
             }
             else
             {
@@ -396,7 +397,8 @@ public class TransferAll
         {
             Mode.ByCondition => Mode.ByConditionSkipUnrepairable,
             Mode.ByConditionSkipUnrepairable => Mode.OnlyRareRepairable,
-            Mode.OnlyRareRepairable => Mode.ByCondition,
+            Mode.OnlyRareRepairable => Mode.ShopListItemsOnly,
+            Mode.ShopListItemsOnly => Mode.ByCondition,
             _ => Mode.ByCondition
         };
 
@@ -406,6 +408,7 @@ public class TransferAll
             Mode.ByConditionSkipUnrepairable =>
                 $"Starting from {_config.MinPartCondition}% condition and skip unrepairable",
             Mode.OnlyRareRepairable => "Only rare repairable parts",
+            Mode.ShopListItemsOnly => "Shopping-list items only",
             _ => "Unknown"
         };
 
@@ -520,13 +523,12 @@ public class TransferAll
 
     private (IList<Item> Items, IList<GroupItem> Groups) GetItemsToMoveFromJunk(
         Il2CppSystem.Collections.Generic.List<BaseItem> junkItems, 
-        HashSet<string> includeShopListItems,
-        bool onlyShopListItems)
+        HashSet<string> includeShopListItems)
     {
         var items = new List<Item>();
         var groups = new List<GroupItem>();
 
-        if (!onlyShopListItems && 
+        if (TransferMode != Mode.ShopListItemsOnly &&
             (_config.TransferMapsOrCasesOnlyAtBarnOrJunkyard || _config.TransferPartsOnlyAtBarnOrJunkyard))
         {
             if (_config.TransferMapsOrCasesOnlyAtBarnOrJunkyard)
@@ -549,7 +551,7 @@ public class TransferAll
 
         foreach (var junkItem in junkItems)
         {
-            if (IsToBeMoved(junkItem, includeShopListItems, onlyShopListItems))
+            if (IsToBeMoved(junkItem, includeShopListItems))
             {
                 var item = junkItem.TryCast<Item>();
                 if (item != null)
@@ -570,7 +572,7 @@ public class TransferAll
         return (items, groups);
     }
 
-    private bool IsToBeMoved(BaseItem baseItem, HashSet<string> includeShopListItems, bool onlyShopListItems)
+    private bool IsToBeMoved(BaseItem baseItem, HashSet<string> includeShopListItems)
     {
         //MelonLogger.Msg($"Checking {baseItem.ID}");
 
@@ -586,7 +588,7 @@ public class TransferAll
             return true;
         }
 
-        if (onlyShopListItems)
+        if (TransferMode == Mode.ShopListItemsOnly)
         {
             return false;
         }
@@ -896,7 +898,7 @@ public class TransferAll
     /// This might change in the future if people set it that low.
     /// There also doesn't seem to be any groups in these stashes.
     /// </remarks>
-    private void MoveBarnOrJunkyardStashItems(HashSet<string> includeShopListItems, bool onlyShopListItems)
+    private void MoveBarnOrJunkyardStashItems(HashSet<string> includeShopListItems)
     {
         MelonLogger.Msg($"MoveBarnOrJunkyardItems");
 
@@ -915,7 +917,7 @@ public class TransferAll
         // Check which Tab is currently being displayed.
         if (itemsExchangeWindow.currentTab == 0)  // This is the Junk (Found) Tab.
         {
-            var count = MoveJunkStashToInventory(itemsExchangeWindow.junk, includeShopListItems, onlyShopListItems, true);
+            var count = MoveJunkStashToInventory(itemsExchangeWindow.junk, includeShopListItems, true);
 
             if (count > 0)
             {
@@ -936,13 +938,13 @@ public class TransferAll
     }
 
 
-    private int MoveJunkStashToInventory(Junk junk, HashSet<string> includeShopListItems, bool onlyShopListItems, bool showPopup,
+    private int MoveJunkStashToInventory(Junk junk, HashSet<string> includeShopListItems, bool showPopup,
         string nameFilter = null)
     {
         MelonLogger.Msg($"MoveJunkStashToInventory from {junk.name}");
         
         // Get the list of junk items/groups.
-        var junkItems = GetItemsToMoveFromJunk(junk.ItemsInTrash, includeShopListItems, onlyShopListItems);
+        var junkItems = GetItemsToMoveFromJunk(junk.ItemsInTrash, includeShopListItems);
         // Apply to every selection path, including maps/cases, shopping-list
         // exceptions and config categories. Groups match their displayed name.
         if (!string.IsNullOrEmpty(nameFilter))
@@ -1057,7 +1059,7 @@ public class TransferAll
     /// Method to move all items and groups from all the Junk Stashes to the Temp Inventory of the Barn or Junkyard.
     /// Or back to the stashes, if temp inventory (aka shopping cart) is opened.
     /// </summary>
-    private void MoveEntireBarnOrJunkyard(HashSet<string> includeShopListItems, bool onlyShopListItems, bool collectOnly = false,
+    private void MoveEntireBarnOrJunkyard(HashSet<string> includeShopListItems, bool collectOnly = false,
         string nameFilter = null)
     {
         MelonLogger.Msg($"MoveEntireBarnOrJunkyard, including seeking for {includeShopListItems.Count} shop list items");
@@ -1100,7 +1102,7 @@ public class TransferAll
         // Loop through each Junk object and move the items and groups.
         foreach (var junk in junks)
         {
-            junkTotalCount += MoveJunkStashToInventory(junk, includeShopListItems, onlyShopListItems, false, nameFilter);
+            junkTotalCount += MoveJunkStashToInventory(junk, includeShopListItems, false, nameFilter);
         }
 
         // Show the user the number of items and groups that were moved.

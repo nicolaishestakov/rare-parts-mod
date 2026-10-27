@@ -10,7 +10,7 @@ dotnet run --project RareParts.PanelPreview
 
 Alternatively, build the project in Rider and run `RareParts.PanelPreview`, or launch `RareParts.PanelPreview/bin/Debug/net10.0-windows/RareParts.PanelPreview.exe` after building.
 
-The panel opens immediately. Try its buttons, checkbox, mode and condition shortcuts, L, Shift+L, Escape and F7. Transfers are simulated and reported below the panel. The toolbar toggles the config filters and whether the simulated scene is a barn/junkyard. Resize the window to check scaling. Closing the panel leaves the application running; F7 reopens it.
+The panel opens immediately. Try its buttons, mode and condition shortcuts, L, Shift+L, Escape and F7. Shopping-list-only filtering is selected through the mode control; Shift+L returns collected items to junk piles. Transfers are simulated and reported below the panel. The toolbar toggles the config filters and whether the simulated scene is a barn/junkyard. Resize the window to check scaling. Closing the panel leaves the application running; F7 reopens it.
 
 ## What is shared
 

@@ -1,6 +1,6 @@
 # Whole-location transfer panel
 
-`TransferSettingsPanel` owns the IMGUI presentation and input/cursor lifetime. It reads the existing configuration and `TransferAll.TransferMode` each frame. Future filter controls belong in `DrawSettings`; selection rules belong in `TransferAll`, shared with the hotkeys. The shopping-list-only toggle is session state, equivalent to the existing Shift-L modifier.
+`TransferSettingsPanel` owns the IMGUI presentation and input/cursor lifetime. It reads the existing configuration and `TransferAll.TransferMode` each frame. Future filter controls belong in `DrawSettings`; selection rules belong in `TransferAll`, shared with the hotkeys. Shopping-list-only selection is controlled solely by the `ShopListItemsOnly` transfer mode, which includes maps and cases and bypasses minimum condition and config category filters. Outside the panel, Shift is ignored for barn/junkyard K/L commands. Inside the panel, Shift-L remains the separate return-to-piles shortcut.
 
 `CollectEntireJunkyardOrBarn` explicitly requests collection. The legacy L command still chooses collection or undo based on the active window. Both paths use the same item selection and stash bookkeeping. The panel's transfer request runs once on the next update, outside IMGUI layout/repaint callbacks.
 
@@ -13,7 +13,7 @@ The panel displays settings relevant to whole-location collection. Warehouse IDs
 - At a barn and junkyard, open F7 while walking. Verify the cursor is usable and clicking the panel does not interact with the world. Close with F7, Escape, and Close; verify normal controls return.
 - Change mode and condition with both the panel buttons and their hotkeys. Reopen and verify values agree. Check condition limits at 0 and 100 and the existing 80/85/90 steps.
 - Collect with inventory closed, with inventory open, and with a pile's collected tab open. Each must collect from every pile into the shopping cart, never return collected items. Verify visible inventory tabs refresh.
-- Check all three modes, shopping-list-only, maps/cases, and each config category filter. Compare selected items with the existing L/Shift-L commands under equivalent settings. Maps/cases and shopping-list matches retain their existing exceptions.
+- Check all four modes, maps/cases, and each config category filter. Outside the panel, verify K/Shift-K and L/Shift-L use identical selection under the same mode. Inside the panel, verify L collects with the selected mode and Shift-L returns collected items. Maps/cases and shopping-list matches retain their existing exceptions.
 - Leave the location while the panel is open; verify it closes and input is restored. F7 outside barn/junkyard or while typing in a game search field must not open it.
 - Verify the separate scrap-repair overlay and legacy K/L transfers still work. Check panel layout at the game's supported resolutions.
 

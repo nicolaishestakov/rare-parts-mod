@@ -27,7 +27,7 @@ namespace RareParts
 
     public sealed class TransferAll
     {
-        public enum Mode { ByCondition, ByConditionSkipUnrepairable, OnlyRareRepairable }
+        public enum Mode { ByCondition, ByConditionSkipUnrepairable, OnlyRareRepairable, ShopListItemsOnly }
         public Mode TransferMode { get; private set; } = Mode.OnlyRareRepairable;
         public bool IsBarnOrJunkyard { get; set; } = true;
         public static bool CheckIfInputIsFocused() => false;
@@ -35,14 +35,14 @@ namespace RareParts
         public int CollectionCalls { get; private set; }
         public int ReturnCalls { get; private set; }
         public bool LastShoppingListOnly { get; private set; }
-        public void SwitchTransferMode() => TransferMode = (Mode)(((int)TransferMode + 1) % 3);
+        public void SwitchTransferMode() => TransferMode = (Mode)(((int)TransferMode + 1) % 4);
         public string LastNameFilter { get; private set; }
-        public void CollectEntireJunkyardOrBarn(bool onlyShopListItems, string nameFilter = null)
+        public void CollectEntireJunkyardOrBarn(string nameFilter = null)
         {
             CollectionCalls++;
-            LastShoppingListOnly = onlyShopListItems;
+            LastShoppingListOnly = TransferMode == Mode.ShopListItemsOnly;
             LastNameFilter = nameFilter;
-            LastAction = $"Simulated collection #{CollectionCalls}: {TransferMode}, shopping-list-only = {onlyShopListItems}, name contains '{nameFilter}'.";
+            LastAction = $"Simulated collection #{CollectionCalls}: {TransferMode}, name contains '{nameFilter}'.";
         }
         public void ReturnEntireJunkyardOrBarn()
         {
