@@ -36,11 +36,13 @@ namespace RareParts
         public int ReturnCalls { get; private set; }
         public bool LastShoppingListOnly { get; private set; }
         public void SwitchTransferMode() => TransferMode = (Mode)(((int)TransferMode + 1) % 3);
-        public void CollectEntireJunkyardOrBarn(bool onlyShopListItems)
+        public string LastNameFilter { get; private set; }
+        public void CollectEntireJunkyardOrBarn(bool onlyShopListItems, string nameFilter = null)
         {
             CollectionCalls++;
             LastShoppingListOnly = onlyShopListItems;
-            LastAction = $"Simulated collection #{CollectionCalls}: {TransferMode}, shopping-list-only = {onlyShopListItems}.";
+            LastNameFilter = nameFilter;
+            LastAction = $"Simulated collection #{CollectionCalls}: {TransferMode}, shopping-list-only = {onlyShopListItems}, name contains '{nameFilter}'.";
         }
         public void ReturnEntireJunkyardOrBarn()
         {

@@ -80,9 +80,22 @@ internal static class Program
         Click(780, 120);
         Check(surface.Config.MinPartCondition == 10, "Condition + button failed.");
         Click(100, 158);
+        Click(400, 295);
+        Check(surface.Panel.IsEditingText, "Name filter did not receive focus.");
+        foreach (var character in "oil")
+            surface.Dispatch(EventType.KeyDown, Point.Empty, character);
+        surface.ReleaseKey(KeyCode.L);
+        surface.ReleaseKey(KeyCode.KeypadMultiply);
+        surface.ReleaseKey(KeyCode.Minus);
+        surface.ReleaseKey(KeyCode.F7);
+        surface.Tick();
+        Check(surface.Panel.IsOpen && surface.Transfer.CollectionCalls == 0 &&
+              surface.Transfer.TransferMode == TransferAll.Mode.ByCondition && surface.Config.MinPartCondition == 10,
+            "Typing in the name filter triggered a shortcut.");
         Click(250, 425);
         Check(surface.Transfer.CollectionCalls == 1 && surface.Transfer.LastShoppingListOnly,
             "Collection must execute once with the checkbox value.");
+        Check(surface.Transfer.LastNameFilter == "oil", "Name filter was not passed to collection.");
         Check(!surface.Panel.IsOpen, "Collection should close the panel.");
         surface.Tick();
         Check(surface.Transfer.CollectionCalls == 1, "Collection executed twice.");
@@ -203,15 +216,16 @@ internal sealed class PreviewSurface : Control
         Input.Held.Clear();
         if (shift) Input.Held.Add(KeyCode.LeftShift);
         Input.Released.Add(key);
-        if (key == KeyCode.F7) Panel.Toggle();
+        if (key == KeyCode.F7 && !Panel.IsEditingText) Panel.Toggle();
         Tick();
     }
-    internal void Dispatch(EventType type, Point point)
+    internal void Dispatch(EventType type, Point point, char character = '\0')
     {
         _mouse = point;
         using var bitmap = new Bitmap(Math.Max(1, Width), Math.Max(1, Height));
         using var graphics = Graphics.FromImage(bitmap);
         GUI.BeginFrame(graphics, Width, Height, type, point);
+        Event.current.character = character;
         Panel.Draw();
         Invalidate();
     }
@@ -237,6 +251,13 @@ internal sealed class PreviewSurface : Control
         Panel.Draw();
     }
     protected override void OnMouseMove(MouseEventArgs e) { _mouse = e.Location; UpdateCursor(); Invalidate(); }
+    protected override void OnKeyPress(KeyPressEventArgs e)
+    {
+        base.OnKeyPress(e);
+        if (!Panel.IsEditingText) return;
+        Dispatch(EventType.KeyDown, _mouse, e.KeyChar);
+        e.Handled = true;
+    }
     protected override void OnMouseLeave(EventArgs e) { _mouse = new(-100, -100); UpdateCursor(); Invalidate(); }
     protected override void OnMouseDown(MouseEventArgs e)
     {

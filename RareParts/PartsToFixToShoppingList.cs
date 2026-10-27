@@ -11,7 +11,7 @@ namespace RareParts;
 
 public class PartsToFixToShoppingList
 {
-    public void Transfer()
+    public void Transfer(bool allMarked)
     {
         var manager = WindowManager.Instance;
         if (manager == null)
@@ -26,7 +26,8 @@ public class PartsToFixToShoppingList
             return;
 
         var tab = window.orderTab;
-        var task = tab?.orderTabPageManager?.currentJobTask;
+        var pages = tab?.orderTabPageManager;
+        var task = pages?.currentJobTask;
         var car = tab?.carLoader;
         var ui = UIManager.Get();
         var shopList = ui?.ShopListWindow;
@@ -34,10 +35,39 @@ public class PartsToFixToShoppingList
             return;
 
         // JobPart.ID identifies a position on the car, not a catalog item.
-        // Include every page of the selected issue, but no other issue's parts.
-        var issuePaths = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var part in task.Parts)
-            issuePaths.Add(part.ID);
+        var selectedPaths = new HashSet<string>(StringComparer.Ordinal);
+        if (allMarked)
+        {
+            // Include every page of the selected issue, as in the original bulk mode.
+            foreach (var part in task.Parts)
+                selectedPaths.Add(part.ID);
+        }
+        else
+        {
+            if (tab.rightGrid == null || pages.itemObjects == null || pages.IsPageAnimationInProgress())
+                return;
+
+            var row = tab.GetItemFromRightGrid();
+            if (row == null || !row.gameObject.activeInHierarchy ||
+                row.selected == null || !row.selected.activeInHierarchy)
+                return;
+
+            var selectedIndex = -1;
+            for (var i = 0; i < pages.currentPageItemsCount && i < pages.itemObjects.Length; i++)
+            {
+                if (pages.itemObjects[i] == row)
+                {
+                    // The game uses this same offset in OrderTabPageManager.SetFixedState.
+                    selectedIndex = pages.currentPage * pages.ItemsPerPage + i;
+                    break;
+                }
+            }
+
+            if (selectedIndex < 0 || selectedIndex >= task.Parts.Count)
+                return;
+
+            selectedPaths.Add(task.Parts[selectedIndex].ID);
+        }
 
         var selectedItems = new List<SelectedItem>();
         var parts = car.GetPartScriptCache();
@@ -47,14 +77,13 @@ public class PartsToFixToShoppingList
             var pathBuilder = new Il2CppSystem.Text.StringBuilder();
             foreach (var part in parts)
             {
-                // The order tab's star action updates this flag immediately.
-                if (part == null || !part.markImportantPart || !part.IsExamined)
+                if (part == null || !part.IsExamined || (allMarked && !part.markImportantPart))
                     continue;
 
                 try
                 {
                     pathBuilder.Clear();
-                    if (!issuePaths.Contains(part.GetGameObjectPathWithoutRoot(pathBuilder)))
+                    if (!selectedPaths.Contains(part.GetGameObjectPathWithoutRoot(pathBuilder)))
                         continue;
 
                     var id = part.GetIDWithTuned();
@@ -68,26 +97,41 @@ public class PartsToFixToShoppingList
                     var data = TryGetAdditionalData(car, part, property.SpecialGroup);
                     if (data == null)
                         continue;
-                    
-                    var selected = selectedItems.Find(item => item.ID == id && item.Data.Equals(data));
-                    if (selected == null)
-                        selectedItems.Add(new SelectedItem { ID = id, Data = data, Amount = 1 });
-                    else
-                        selected.Amount++;
+
+                    if (allMarked)
+                    {
+                        var selected = selectedItems.Find(item => item.ID == id && item.Data.Equals(data));
+                        if (selected == null)
+                            selectedItems.Add(new SelectedItem { ID = id, Data = data, Amount = 1 });
+                        else
+                            selected.Amount++;
+                        continue;
+                    }
+
+                    var previousAmount = GetAmount(shopList, id, data);
+                    shopList.AddToShopList(id, string.Empty, data);
+                    var added = GetAmount(shopList, id, data) - previousAmount;
+                    ui.ShowPopup("Shopping list", $"{added} item added to shopping list", PopupType.Normal);
+                    return;
                 }
                 catch (Exception exception)
                 {
-                    MelonLogger.Warning($"Could not add marked part '{part.id}' to shopping list: {exception}");
+                    MelonLogger.Warning($"Could not add selected part '{part.id}' to shopping list: {exception}");
+                    if (!allMarked)
+                        return;
                 }
             }
         }
 
-        var added = 0;
+        if (!allMarked)
+            return;
+
+        var totalAdded = 0;
         foreach (var selected in selectedItems)
         {
             try
             {
-                added += ShoppingListQuantity.TopUp(selected.Amount,
+                totalAdded += ShoppingListQuantity.TopUp(selected.Amount,
                     () => GetAmount(shopList, selected.ID, selected.Data),
                     () => shopList.AddToShopList(selected.ID, string.Empty, selected.Data));
             }
@@ -97,7 +141,10 @@ public class PartsToFixToShoppingList
             }
         }
 
-        ui.ShowPopup("Shopping list", $"{added} items added to shopping list", PopupType.Normal);
+        if (totalAdded > 1)
+        {
+            ui.ShowPopup("Shopping list", $"{totalAdded} items added to shopping list", PopupType.Normal);
+        }
     }
 
     private sealed class SelectedItem
@@ -134,7 +181,7 @@ public class PartsToFixToShoppingList
         var wheel = GetWheel(car, part.transform);
         if (wheel == null)
         {
-            MelonLogger.Warning($"Cannot determine wheel dimensions for marked part '{part.id}'.");
+            MelonLogger.Warning($"Cannot determine wheel dimensions for selected part '{part.id}'.");
             return null;
         }
 

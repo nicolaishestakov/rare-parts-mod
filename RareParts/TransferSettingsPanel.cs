@@ -19,11 +19,17 @@ public sealed class TransferSettingsPanel
     private readonly TransferAll _transfer;
     private readonly ITransferAllConfig _config;
     private bool _onlyShoppingList;
+    private string _nameFilter = string.Empty;
+    private bool _resetTextFocus;
+    private const string NameFilterControl = "TransferNameFilter";
+    private static readonly Rect NameFilterRect = new(280, 280, 560, 30);
+    public bool IsEditingText { get; private set; }
+    internal static bool IsTextInputFocused => _activePanel != null && _activePanel.IsEditingText;
     private enum TransferRequest { None, Collect, Return }
     private TransferRequest _transferRequested;
     private Font _gameFont;
     private float _nextFontLookup;
-    private GUIStyle _labelStyle, _buttonStyle, _titleStyle, _toggleStyle;
+    private GUIStyle _labelStyle, _buttonStyle, _titleStyle, _toggleStyle, _textFieldStyle;
     private GUIStyle _actionStyle, _shortcutStyle;
     private readonly Dictionary<Texture, FilterMode> _fontFilters = new();
     private static readonly Color TitleBackground = new(49 / 255f, 49 / 255f, 49 / 255f, 0.97f);
@@ -135,6 +141,7 @@ public sealed class TransferSettingsPanel
         // _disableMouseEvents = GameSettings.DisableMouseEvents;
 
         IsOpen = true;
+        _resetTextFocus = true;
         _activePanel = this;
         //_player.isPlaying = false; //todo verify if needed
         // _windows.EnableGraphicsRaycasterAndBlock(false, true);
@@ -150,6 +157,7 @@ public sealed class TransferSettingsPanel
             return;
 
         IsOpen = false;
+        IsEditingText = false;
         if (_activePanel == this)
             _activePanel = null;
         // OnGUI can close after the game's Update, or collection can close before
@@ -187,9 +195,13 @@ public sealed class TransferSettingsPanel
             if (request == TransferRequest.Return)
                 _transfer.ReturnEntireJunkyardOrBarn();
             else
-                _transfer.CollectEntireJunkyardOrBarn(_onlyShoppingList);
+                _transfer.CollectEntireJunkyardOrBarn(_onlyShoppingList, _nameFilter);
             return;
         }
+
+        // Typing must not trigger configured letter/punctuation shortcuts.
+        if (IsEditingText)
+            return;
 
         if (Input.GetKeyUp(_config.SwitchModeKey))
             _transfer.SwitchTransferMode();
@@ -268,6 +280,11 @@ public sealed class TransferSettingsPanel
             return;
 
         PrepareFontStyles();
+        if (_resetTextFocus)
+        {
+            GUI.FocusControl(null);
+            _resetTextFocus = false;
+        }
 
         //ShowCursor();
 
@@ -294,10 +311,14 @@ public sealed class TransferSettingsPanel
             SmoothFont(_toggleStyle);
             SmoothFont(_actionStyle);
             SmoothFont(_shortcutStyle);
+            SmoothFont(_textFieldStyle);
+            if (Event.current.type == EventType.MouseDown && !NameFilterRect.Contains(Event.current.mousePosition))
+                GUI.FocusControl(null);
             DrawPanelBackground(width, titleHeight, bodyBottom);
             GUI.color = Color.white;
             GUI.Label(new Rect(1, 1, width - 2, titleHeight - 1), "TRANSFER ALL ITEMS", _titleStyle);
             DrawSettings();
+            IsEditingText = GUI.GetNameOfFocusedControl() == NameFilterControl;
             if (DrawAction(new Rect(20, actionY, collectWidth, 36), collectShortcut, collectLabel))
                 _transferRequested = TransferRequest.Collect;
             if (DrawAction(new Rect(20 + collectWidth + 24, actionY, returnWidth, 36), returnShortcut, returnLabel))
@@ -372,6 +393,7 @@ public sealed class TransferSettingsPanel
         _titleStyle.alignment = TextAnchor.MiddleCenter;
         _titleStyle.normal.textColor = Color.white;
         _toggleStyle = CreateFontStyle(GUI.skin.toggle);
+        _textFieldStyle = CreateFontStyle(GUI.skin.textField);
         _actionStyle = CreateFontStyle(GUIStyle.none);
         _actionStyle.alignment = TextAnchor.MiddleLeft;
         _shortcutStyle = CreateFontStyle(GUIStyle.none);
@@ -556,6 +578,9 @@ public sealed class TransferSettingsPanel
         Row(185, "Maps / cases filter (config)", OnOff(_config.TransferMapsOrCasesOnlyAtBarnOrJunkyard));
         Row(215, "Parts filter (config)", OnOff(_config.TransferPartsOnlyAtBarnOrJunkyard));
         Row(245, "Repair thresholds", $"Normal: {PartsInfo.NormalRepairablePartsMinCondition * 100:0}%   Special: {PartsInfo.SpecialRepairablePartsMinCondition * 100:0}%");
+        DrawLabel(new Rect(20, 280, 250, 30), "NAME CONTAINS");
+        GUI.SetNextControlName(NameFilterControl);
+        _nameFilter = GUI.TextField(NameFilterRect, _nameFilter, _textFieldStyle);
 
         var specialFilter = !_onlyShoppingList &&
             (_config.TransferMapsOrCasesOnlyAtBarnOrJunkyard || _config.TransferPartsOnlyAtBarnOrJunkyard);
@@ -567,7 +592,7 @@ public sealed class TransferSettingsPanel
                   (_transfer.TransferMode == TransferAll.Mode.OnlyRareRepairable
                       ? "Minimum condition is ignored in rare repairable mode."
                       : "Other parts use the selected mode and minimum condition.");
-        DrawLabel(new Rect(20, 290, 820, 70), explanation);
+        DrawLabel(new Rect(20, 320, 820, 60), explanation + "\nName filter applies to all results; blank matches all names.");
     }
 
     private void Row(float y, string label, string value)

@@ -75,11 +75,12 @@ public static class Input
     public static bool GetKeyUp(KeyCode key) => Released.Contains(key);
     public static bool GetKey(KeyCode key) => Held.Contains(key);
 }
-public enum EventType { Repaint, MouseDown, MouseUp, MouseMove, ScrollWheel, Used }
+public enum EventType { Repaint, MouseDown, MouseUp, MouseMove, ScrollWheel, KeyDown, Used }
 public class Event
 {
     public static Event current = new();
     public EventType type;
+    public char character;
     internal Vector2 ScreenPosition;
     public Vector2 mousePosition => new(ScreenPosition.x / GUI.matrix.Scale - GUI.GroupX,
         ScreenPosition.y / GUI.matrix.Scale - GUI.GroupY);
@@ -128,6 +129,7 @@ public class GUISkin
     public GUIStyle button = new() { Kind = "button", alignment = TextAnchor.MiddleCenter };
     public GUIStyle box = new() { Kind = "box", alignment = TextAnchor.UpperCenter, padding = new() { top = 4 } };
     public GUIStyle toggle = new() { Kind = "toggle", alignment = TextAnchor.MiddleLeft };
+    public GUIStyle textField = new() { Kind = "textField", alignment = TextAnchor.MiddleLeft };
 }
 public static class GUI
 {
@@ -139,6 +141,35 @@ public static class GUI
     internal static float GroupX, GroupY;
     private static GraphicsState _groupState;
     private static RectangleF? _pressed;
+    private static string _nextControlName, _focusedControl;
+    public static void SetNextControlName(string name) => _nextControlName = name;
+    public static void FocusControl(string name) => _focusedControl = name;
+    public static string GetNameOfFocusedControl() => _focusedControl;
+
+    public static string TextField(Rect rect, string text, GUIStyle style)
+    {
+        var name = _nextControlName;
+        _nextControlName = null;
+        if (Event.current.type == EventType.MouseDown && rect.Contains(Event.current.mousePosition))
+        {
+            FocusControl(name);
+            Event.current.Use();
+        }
+        if (_focusedControl == name && Event.current.type == EventType.KeyDown)
+        {
+            var character = Event.current.character;
+            if (character == '\b' && text.Length > 0) text = text.Substring(0, text.Length - 1);
+            else if (!char.IsControl(character)) text += character;
+            Event.current.Use();
+        }
+        if (Event.current.type == EventType.Repaint)
+        {
+            using var background = new SolidBrush(DrawingColor.FromArgb(35, 35, 35));
+            Graphics.FillRectangle(background, ToScreen(rect));
+            Box(rect, text + (_focusedControl == name ? "|" : ""), style);
+        }
+        return text;
+    }
 
     internal static void BeginFrame(Graphics graphics, int width, int height, EventType type, Point mouse)
     {

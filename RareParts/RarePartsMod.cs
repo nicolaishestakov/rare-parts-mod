@@ -91,6 +91,8 @@ public class RarePartsMod : MelonMod
         }
 
         var blockTransferShortcuts = _transferAll?.Update() == true;
+        if (TransferSettingsPanel.IsTextInputFocused)
+            return;
 
 #if !DEBUG
         if (_config.IsDebugMode)
@@ -116,7 +118,7 @@ public class RarePartsMod : MelonMod
 
         if (Input.GetKeyUp(_config.PartsToFixToShoppingListKey))
         {
-            _partsToFixToShoppingList.Transfer();
+            _partsToFixToShoppingList.Transfer(IsShiftPressed());
         }
 
         if (!blockTransferShortcuts && _transferAll is not null)

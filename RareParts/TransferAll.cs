@@ -38,7 +38,7 @@ public class TransferAll
         // Keep shortcuts suppressed for the closing frame as well.
         var blockTransferShortcuts = _transferSettingsPanel.IsOpen;
         _transferSettingsPanel.Update();
-        if (UnityEngine.Input.GetKeyUp(_config.TransferSettingsKey))
+        if (!_transferSettingsPanel.IsEditingText && UnityEngine.Input.GetKeyUp(_config.TransferSettingsKey))
         {
             _transferSettingsPanel.Toggle();
             blockTransferShortcuts = true;
@@ -127,10 +127,11 @@ public class TransferAll
 
     // The panel always collects; unlike the legacy hotkey it never infers an undo
     // operation from whichever inventory tab happens to be open.
-    public void CollectEntireJunkyardOrBarn(bool onlyShopListItems)
+    public void CollectEntireJunkyardOrBarn(bool onlyShopListItems, string nameFilter = null)
     {
         if (IsBarnOrJunkyard && !CheckIfInputIsFocused())
-            MoveEntireBarnOrJunkyard(GetShopListItems(), onlyShopListItems, collectOnly: true);
+            MoveEntireBarnOrJunkyard(GetShopListItems(), onlyShopListItems, collectOnly: true,
+                nameFilter: nameFilter?.Trim());
     }
 
     /// <summary>Return items collected by this mod to their original piles, regardless of the active tab.</summary>
@@ -447,6 +448,9 @@ public class TransferAll
     /// <returns>(bool) True if the Search/Input Field is being used.</returns>
     internal static bool CheckIfInputIsFocused()
     {
+        if (TransferSettingsPanel.IsTextInputFocused)
+            return true;
+
         var inputFields = UnityEngine.Object.FindObjectsOfType<InputField>();
         foreach (var inputField in inputFields)
         {
@@ -932,12 +936,22 @@ public class TransferAll
     }
 
 
-    private int MoveJunkStashToInventory(Junk junk, HashSet<string> includeShopListItems, bool onlyShopListItems, bool showPopup)
+    private int MoveJunkStashToInventory(Junk junk, HashSet<string> includeShopListItems, bool onlyShopListItems, bool showPopup,
+        string nameFilter = null)
     {
         MelonLogger.Msg($"MoveJunkStashToInventory from {junk.name}");
         
         // Get the list of junk items/groups.
         var junkItems = GetItemsToMoveFromJunk(junk.ItemsInTrash, includeShopListItems, onlyShopListItems);
+        // Apply to every selection path, including maps/cases, shopping-list
+        // exceptions and config categories. Groups match their displayed name.
+        if (!string.IsNullOrEmpty(nameFilter))
+        {
+            bool Matches(BaseItem item) => item.GetLocalizedName()?.IndexOf(nameFilter,
+                StringComparison.CurrentCultureIgnoreCase) >= 0;
+            junkItems = (junkItems.Items.Where(item => Matches(item)).ToList(),
+                junkItems.Groups.Where(group => Matches(group)).ToList());
+        }
         // Store the number of junk in the Stash.
         int junkCount = junkItems.Items.Count + junkItems.Groups.Count;
 
@@ -1043,7 +1057,8 @@ public class TransferAll
     /// Method to move all items and groups from all the Junk Stashes to the Temp Inventory of the Barn or Junkyard.
     /// Or back to the stashes, if temp inventory (aka shopping cart) is opened.
     /// </summary>
-    private void MoveEntireBarnOrJunkyard(HashSet<string> includeShopListItems, bool onlyShopListItems, bool collectOnly = false)
+    private void MoveEntireBarnOrJunkyard(HashSet<string> includeShopListItems, bool onlyShopListItems, bool collectOnly = false,
+        string nameFilter = null)
     {
         MelonLogger.Msg($"MoveEntireBarnOrJunkyard, including seeking for {includeShopListItems.Count} shop list items");
         
@@ -1085,7 +1100,7 @@ public class TransferAll
         // Loop through each Junk object and move the items and groups.
         foreach (var junk in junks)
         {
-            junkTotalCount += MoveJunkStashToInventory(junk, includeShopListItems, onlyShopListItems, false);
+            junkTotalCount += MoveJunkStashToInventory(junk, includeShopListItems, onlyShopListItems, false, nameFilter);
         }
 
         // Show the user the number of items and groups that were moved.
