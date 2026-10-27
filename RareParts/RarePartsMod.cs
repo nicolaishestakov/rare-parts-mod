@@ -14,6 +14,7 @@ public class RarePartsMod : MelonMod
 {
     private Config _config;
     private ILogger<RarePartsMod> _logger;
+    private ILoggerFactory _loggerFactory;
     private bool _isInitialized = false;
 
     private TransferAll _transferAll;
@@ -41,19 +42,20 @@ public class RarePartsMod : MelonMod
         var logLevel = _config.IsDebugMode ? LogLevel.Debug : LogLevel.Information;
         #endif
         
-        var loggerFactory = new LoggerFactory(logLevel);
-        _logger = loggerFactory.CreateLogger<RarePartsMod>();
+        _loggerFactory = new LoggerFactory(logLevel);
+        _logger = _loggerFactory.CreateLogger<RarePartsMod>();
         
-        _tempInventoryManager = new TempInventoryManager(); //todo inject logger
+        _tempInventoryManager = new TempInventoryManager(_loggerFactory.CreateLogger<TempInventoryManager>());
         
-        _repairScrap = new RepairScrap(); //todo inject logger
+        _repairScrap = new RepairScrap(_loggerFactory.CreateLogger<RepairScrap>());
         _partsToFixToShoppingList = new PartsToFixToShoppingList();
     }
 
     public override void OnLateInitializeMelon()
     {
         var qolSettings = QolSettings.CreateFromLoadedMelonAssembly($@"{Directory.GetCurrentDirectory()}\\Mods\\QoLmod.dll");
-        _transferAll = new TransferAll(_config, _tempInventoryManager, new QolPopupsBlocker(qolSettings)); //todo inject logger
+        _transferAll = new TransferAll(_config, _tempInventoryManager, new QolPopupsBlocker(qolSettings),
+            _loggerFactory.CreateLogger<TransferAll>());
     }
 
     private void GlobalInits()

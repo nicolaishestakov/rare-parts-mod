@@ -30,7 +30,7 @@ namespace RareParts
         public enum Mode { ByCondition, ByConditionSkipUnrepairable, OnlyRareRepairable, ShopListItemsOnly }
         public Mode TransferMode { get; private set; } = Mode.OnlyRareRepairable;
         public bool IsBarnOrJunkyard { get; set; } = true;
-        public static bool CheckIfInputIsFocused() => false;
+        public bool CheckIfInputIsFocused() => false;
         public string LastAction { get; private set; } = "No simulated transfers yet.";
         public int CollectionCalls { get; private set; }
         public int ReturnCalls { get; private set; }

@@ -1,7 +1,6 @@
 ﻿using CMS.Helpers;
 using CMS.UI;
 using CMS.UI.Windows;
-using MelonLoader;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -9,6 +8,7 @@ using System.Linq;
 using CMS.Containers;
 using CMS.UI.Logic.Warehouse;
 using RareParts.Extensions;
+using RareParts.Logging;
 using UnityEngine.UI;
 
 // based on https://github.com/mannly01/TransferAll
@@ -17,13 +17,15 @@ namespace RareParts;
 
 public class TransferAll
 {
-    public TransferAll(ITransferAllConfig config, TempInventoryManager tempInventoryManager, IQolPopupsBlocker qolPopupsBlocker)
+    public TransferAll(ITransferAllConfig config, TempInventoryManager tempInventoryManager, IQolPopupsBlocker qolPopupsBlocker, ILogger<TransferAll> logger)
     {
+        _logger = logger;
         _config = config;
         _tempInventoryManager = tempInventoryManager;
         _qolPopupsBlocker = qolPopupsBlocker;
     }
 
+    private readonly ILogger<TransferAll> _logger;
     private readonly ITransferAllConfig _config;
     private TransferSettingsPanel _transferSettingsPanel;
 
@@ -146,7 +148,7 @@ public class TransferAll
             count += MoveCollectedInventoryItemsBackToJunkStash(junk, false);
 
         Popup(count > 0 ? $"Items returned to junk piles: {count}" : "No collected items to return.");
-        MelonLogger.Msg($"Items returned from Shopping Cart to junk piles: {count}");
+        _logger.Information($"Items returned from Shopping Cart to junk piles: {count}");
         if (count > 0)
         {
             GetInventoryWindow(true)?.Refresh();
@@ -172,7 +174,7 @@ public class TransferAll
             _tempGroups.Clear();
             _tempInventoryManager.Invalidate();
             _transferSettingsPanel = new TransferSettingsPanel(this, _config);
-            MelonLogger.Msg($"Entered {sceneName}");
+            _logger.Information($"Entered {sceneName}");
         }
     }
 
@@ -192,7 +194,7 @@ public class TransferAll
             _tempInventoryManager.Clear();
             _transferSettingsPanel?.Close();
             _transferSettingsPanel = null;
-            MelonLogger.Msg($"Leaving {sceneName}");
+            _logger.Information($"Leaving {sceneName}");
         }
     }
     
@@ -213,7 +215,7 @@ public class TransferAll
                 {
                     // The user hasn't upgraded their Garage, so show them a message.
                     Popup("You must unlock the Warehouse Expansion first.");
-                    MelonLogger.Msg("Warehouse has not been unlocked");
+                    _logger.Information("Warehouse has not been unlocked");
                 }
             }
             // Check that the user is in the Barn or Junkyard.
@@ -226,12 +228,12 @@ public class TransferAll
             {
                 // The user is not at the Garage, so show them a message.
                 Popup("This function only works at the Garage, Barn or Junkyard");
-                MelonLogger.Msg("TransferEntireJunkyardOrBarn key pressed outside of Garage, Barn or Junkyard");
+                _logger.Information("TransferEntireJunkyardOrBarn key pressed outside of Garage, Barn or Junkyard");
             }
         }
         else
         {
-            MelonLogger.Msg("Search box has focus");
+            _logger.Information("Search box has focus");
         }
     }
 
@@ -250,12 +252,12 @@ public class TransferAll
             {
                 // The user is not at the Barn or Junkyard, so show them a message.
                 Popup("This function only works at the Barn or Junkyard");
-                MelonLogger.Msg("TransferEntireJunkyardOrBarn key pressed outside of Barn or Junkyard");
+                _logger.Information("TransferEntireJunkyardOrBarn key pressed outside of Barn or Junkyard");
             }
         }
         else
         {
-            MelonLogger.Msg("Search box has focus");
+            _logger.Information("Search box has focus");
         }
     }
 
@@ -275,7 +277,7 @@ public class TransferAll
 
         if (shopListWindow == null)
         {
-            MelonLogger.Msg("shopListWindow is null");
+            _logger.Information("shopListWindow is null");
             return;
         }
 
@@ -284,9 +286,9 @@ public class TransferAll
 
         foreach (var shopItem in shopListWindow.items.ToEnumerable().ToList())
         {
-            MelonLogger.Msg($"Looking for {shopItem.ID}");
+            _logger.Information($"Looking for {shopItem.ID}");
             var found = warehouse.FindItems(shopItem.ID, _config.MoveShoppingListWarehouses);
-            MelonLogger.Msg($"Found {found.Count} items");
+            _logger.Information($"Found {found.Count} items");
 
             var wantedAmount = shopItem.Amount;
 
@@ -304,7 +306,7 @@ public class TransferAll
                     }
                     else
                     {
-                        MelonLogger.Msg($"Item {item.ID} condition {item.Condition * 100f} is not repairable so will not be moved");
+                        _logger.Information($"Item {item.ID} condition {item.Condition * 100f} is not repairable so will not be moved");
                     }
                 }
                 else if (mode == MoveShoppingListMode.MoveRareUnrepairable)
@@ -320,7 +322,7 @@ public class TransferAll
 
         if (shoppingListModified && shopListWindow.IsActive)
         {
-            MelonLogger.Msg("shopListWindow is active, trying to refresh");
+            _logger.Information("shopListWindow is active, trying to refresh");
             shopListWindow.Hide(true);
             shopListWindow.Show();
         }
@@ -340,7 +342,7 @@ public class TransferAll
         bool deleteMovedFromShoppingList)
     {
         var itemName = warehouseItem.GetLocalizedName();
-        MelonLogger.Msg($"Moving Item {itemName}" + (deleteMovedFromShoppingList? "": ", keep in the shopping list"));
+        _logger.Information($"Moving Item {itemName}" + (deleteMovedFromShoppingList? "": ", keep in the shopping list"));
 
         if (deleteMovedFromShoppingList)
         {
@@ -350,18 +352,18 @@ public class TransferAll
         inventory.Add(warehouseItem);
         if (!warehouse.DeleteRobust(warehouseItem))
         {
-            MelonLogger.Msg($"Failed to delete item {itemName} from warehouse");
+            _logger.Information($"Failed to delete item {itemName} from warehouse");
         }
         else
         {
             var leftItems = warehouse.FindItems(warehouseItem.ID, _config.MoveShoppingListWarehouses);
             if (leftItems.Count == 0)
             {
-                MelonLogger.Msg($"No more {itemName} left in movable warehouse stores");
+                _logger.Information($"No more {itemName} left in movable warehouse stores");
             }
             else
             {
-                MelonLogger.Msg($"Still {leftItems.Count} are in movable warehouse stores");
+                _logger.Information($"Still {leftItems.Count} are in movable warehouse stores");
             }
         }
 
@@ -376,7 +378,7 @@ public class TransferAll
         
         if (shopListWindow is null)
         {
-            MelonLogger.Msg("shopListWindow is null");
+            _logger.Information("shopListWindow is null");
         }
         else
         {
@@ -420,7 +422,7 @@ public class TransferAll
     /// as an Expansion, so check if it has been unlocked.
     /// </summary>
     /// <returns>(bool) True if the Warehouse Expansion has been unlocked.</returns>
-    private static bool CheckIfWarehouseIsUnlocked()
+    private bool CheckIfWarehouseIsUnlocked()
     {
         var garageLevelManager = Singleton<GarageLevelManager>.Instance;
         // The GarageLevelManager seems to be the easiest way to find out.
@@ -435,7 +437,7 @@ public class TransferAll
             var warehouseUpgrade = garageAndToolsTab.upgradeItems[7];
 #if DEBUG
             // Debug to show the status.
-            MelonLogger.Msg($"Warehouse Unlocked: {warehouseUpgrade.IsUnlocked}");
+            _logger.Information($"Warehouse Unlocked: {warehouseUpgrade.IsUnlocked}");
 #endif
             return warehouseUpgrade.IsUnlocked;
         }
@@ -449,7 +451,7 @@ public class TransferAll
     /// the mod should do nothing.
     /// </summary>
     /// <returns>(bool) True if the Search/Input Field is being used.</returns>
-    internal static bool CheckIfInputIsFocused()
+    internal bool CheckIfInputIsFocused()
     {
         if (TransferSettingsPanel.IsTextInputFocused)
             return true;
@@ -462,7 +464,7 @@ public class TransferAll
                 if (inputField.isFocused)
                 {
 #if DEBUG
-                    MelonLogger.Msg("Input Field Focused");
+                    _logger.Information("Input Field Focused");
 #endif
                     return true;
                 }
@@ -574,7 +576,7 @@ public class TransferAll
 
     private bool IsToBeMoved(BaseItem baseItem, HashSet<string> includeShopListItems)
     {
-        //MelonLogger.Msg($"Checking {baseItem.ID}");
+        //_logger.Information($"Checking {baseItem.ID}");
 
         if (baseItem.IsMap || baseItem.IsCase)
         {
@@ -625,7 +627,7 @@ public class TransferAll
             if (item == null)
             {
                 // Move group?
-                MelonLogger.Msg($"{id} moved as a group?");
+                _logger.Information($"{id} moved as a group?");
                 return true;
             }
 
@@ -634,14 +636,14 @@ public class TransferAll
                 (baseItem.IsSpecialRepairable &&
                  condition < PartsInfo.SpecialRepairablePartsMinCondition))
             {
-                MelonLogger.Msg($"{id} not included as non-repairable");
+                _logger.Information($"{id} not included as non-repairable");
                 return false;
             }
 
             return true;
         }
 
-        MelonLogger.Error($"Unknown transfer mode {TransferMode}. Item {id} not moved");
+        _logger.Error($"Unknown transfer mode {TransferMode}. Item {id} not moved");
         return false;
     }
 
@@ -657,7 +659,7 @@ public class TransferAll
         Inventory inventory, Warehouse warehouse)
     {
 #if DEBUG
-        MelonLogger.Msg($"Called");
+        _logger.Information($"Called");
 #endif
         // Disable QoLmod settings temporarily.
         using var guard = _qolPopupsBlocker.BlockPopups();
@@ -709,7 +711,7 @@ public class TransferAll
         if (warehouseWindow is null)
         {
             Popup("Please open the Warehouse first.");
-            MelonLogger.Msg("Warehouse is not open");
+            _logger.Information("Warehouse is not open");
             return;
         }
 
@@ -722,7 +724,7 @@ public class TransferAll
             // for the current category only.
             if (_config.TransferByCategory)
             {
-                MelonLogger.Msg($"TransferByCategory enabled");
+                _logger.Information($"TransferByCategory enabled");
 
                 var currentTab = warehouseWindow.warehouseInventoryTab;
                 items = inventory.GetItemsForCategory(currentTab.currentCategory).ToEnumerable().ToList();
@@ -736,7 +738,7 @@ public class TransferAll
             if (items.Count == 0)
             {
                 Popup("No items to move");
-                MelonLogger.Msg("No items to move");
+                _logger.Information("No items to move");
                 return;
             }
 
@@ -746,7 +748,7 @@ public class TransferAll
                 // Show the user the number of items and groups that were moved.
                 Popup($"Items Moved From Inventory: {tempItems}");
                 Popup($"Groups Moved From Inventory: {tempGroups}");
-                MelonLogger.Msg($"{tempItems} Item(s) and {tempGroups} Group(s) moved from Inventory");
+                _logger.Information($"{tempItems} Item(s) and {tempGroups} Group(s) moved from Inventory");
 
                 // Refresh the Warehouse Inventory Tab.
                 warehouseWindow.warehouseInventoryTab.Refresh();
@@ -760,12 +762,12 @@ public class TransferAll
                 {
                     if (response)
                     {
-                        MelonLogger.Msg($"User accepted MinNumOfItemsWarning dialog");
+                        _logger.Information($"User accepted MinNumOfItemsWarning dialog");
                         Move();
                     }
                     else
                     {
-                        MelonLogger.Msg($"User cancelled MinNumOfItemsWarning dialog");
+                        _logger.Information($"User cancelled MinNumOfItemsWarning dialog");
                     }
                 };
 
@@ -782,7 +784,7 @@ public class TransferAll
         {
             if (moveOnlyDuplicateItems)
             {
-                MelonLogger.Msg($"moveOnlyDuplicateItems enabled");
+                _logger.Information($"moveOnlyDuplicateItems enabled");
             }
             
             var items = GetItemsToMoveFromWarehouseTabToInventory(warehouse, warehouseWindow.warehouseTab, moveOnlyDuplicateItems);
@@ -790,7 +792,7 @@ public class TransferAll
             if (items.Count == 0)
             {
                 Popup("No items to move");
-                MelonLogger.Msg("No items to move");
+                _logger.Information("No items to move");
                 return;
             }
 
@@ -800,7 +802,7 @@ public class TransferAll
                 // Show the user the number of items and groups that were moved.
                 Popup($"Items Moved From Warehouse: {tempItems}");
                 Popup($"Groups Moved From Warehouse: {tempGroups}");
-                MelonLogger.Msg($"{tempItems} Item(s) and {tempGroups} Group(s) moved from Warehouse");
+                _logger.Information($"{tempItems} Item(s) and {tempGroups} Group(s) moved from Warehouse");
 
                 // Refresh the Warehouse Tab
                 warehouseWindow.warehouseTab.Refresh(true);
@@ -809,7 +811,7 @@ public class TransferAll
             // Check if the Warehouse has more items/groups than the user has configured in Settings.
             if (items.Count >= _config.MinNumOfItemsWarning)
             {
-                MelonLogger.Msg($"MinNumOfItemsWarning threshold reached");
+                _logger.Information($"MinNumOfItemsWarning threshold reached");
 
                 // Ask the user to confirm the move because there are a lot of items/groups.
                 Action<bool> confirmMove = response =>
@@ -900,14 +902,14 @@ public class TransferAll
     /// </remarks>
     private void MoveBarnOrJunkyardStashItems(HashSet<string> includeShopListItems)
     {
-        MelonLogger.Msg($"MoveBarnOrJunkyardItems");
+        _logger.Information($"MoveBarnOrJunkyardItems");
 
         var itemsExchangeWindow = GetItemsExchangeWindow(true);
 
         if (itemsExchangeWindow is null)
         {
             Popup("Please open a junk pile first.");
-            MelonLogger.Msg("Junk window not open");
+            _logger.Information("Junk window not open");
             return;
         }
 
@@ -941,7 +943,7 @@ public class TransferAll
     private int MoveJunkStashToInventory(Junk junk, HashSet<string> includeShopListItems, bool showPopup,
         string nameFilter = null)
     {
-        MelonLogger.Msg($"MoveJunkStashToInventory from {junk.name}");
+        _logger.Information($"MoveJunkStashToInventory from {junk.name}");
         
         // Get the list of junk items/groups.
         var junkItems = GetItemsToMoveFromJunk(junk.ItemsInTrash, includeShopListItems);
@@ -964,7 +966,7 @@ public class TransferAll
                 Popup("No items to move");
             }
 
-            MelonLogger.Msg("No items to move");
+            _logger.Information("No items to move");
             return 0;
         }
         
@@ -993,7 +995,7 @@ public class TransferAll
             Popup($"Groups Moved From Junk to Shopping Cart: {junkItems.Groups.Count}");
         }
         
-        MelonLogger.Msg(
+        _logger.Information(
             $"{junkItems.Items.Count} Item(s) and {junkItems.Groups.Count} Group(s) moved from Junk to Shopping Cart.");
 
         return junkCount;
@@ -1008,7 +1010,7 @@ public class TransferAll
         {
             if (showPopup)
                 Popup("No items to move");
-            MelonLogger.Msg("No items to move");
+            _logger.Information("No items to move");
             return 0;
         }
 
@@ -1048,7 +1050,7 @@ public class TransferAll
             Popup($"Items Moved to Junk: {itemCount}");
             // Show the user the number of groups that were moved.
             Popup($"Groups Moved to Junk: {groupCount}");
-            MelonLogger.Msg($"{itemCount} Item(s) and {groupCount} Group(s) moved to Junk");
+            _logger.Information($"{itemCount} Item(s) and {groupCount} Group(s) moved to Junk");
         }
 
         return itemCount + groupCount;
@@ -1062,7 +1064,7 @@ public class TransferAll
     private void MoveEntireBarnOrJunkyard(HashSet<string> includeShopListItems, bool collectOnly = false,
         string nameFilter = null)
     {
-        MelonLogger.Msg($"MoveEntireBarnOrJunkyard, including seeking for {includeShopListItems.Count} shop list items");
+        _logger.Information($"MoveEntireBarnOrJunkyard, including seeking for {includeShopListItems.Count} shop list items");
         
         var itemsExchangeWindow = GetItemsExchangeWindow(true);
         var inventoryWindow = GetInventoryWindow(true);
@@ -1109,7 +1111,7 @@ public class TransferAll
         if (junkTotalCount > 0)
         {
             Popup($"Junk items moved to Shopping Cart: {junkTotalCount}.");
-            MelonLogger.Msg($"Junk items moved to Shopping Cart: {junkTotalCount}");
+            _logger.Information($"Junk items moved to Shopping Cart: {junkTotalCount}");
             
             itemsExchangeWindow?.foundTab?.Refresh();
             itemsExchangeWindow?.collectedTab?.Refresh();
@@ -1118,7 +1120,7 @@ public class TransferAll
         else
         {
             Popup("Junk piles are empty or items do not meet move criteria.");
-            MelonLogger.Msg("Junk piles are empty or items do not meet move criteria");
+            _logger.Information("Junk piles are empty or items do not meet move criteria");
         }
     }
 

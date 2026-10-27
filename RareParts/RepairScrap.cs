@@ -4,20 +4,27 @@ using System.Linq;
 using System.Text;
 using CMS.UI;
 using CMS.UI.Windows;
-using MelonLoader;
 using RareParts.Extensions;
+using RareParts.Logging;
 
 namespace RareParts;
 
 public class RepairScrap
 {
+    private readonly ILogger<RepairScrap> _logger;
+
+    public RepairScrap(ILogger<RepairScrap> logger)
+    {
+        _logger = logger;
+    }
+
     public void Repair()
     {
         var scrapWindow = GetScrapWindowIfActive();
 
         if (scrapWindow is null)
         {
-            MelonLogger.Msg("Scrap window is not active, exiting repair.");
+            _logger.Information("Scrap window is not active, exiting repair.");
             return;
         }
         
@@ -43,7 +50,7 @@ public class RepairScrap
 
         if (currentItem is not null)
         {
-            MelonLogger.Msg("Currently selected item:");
+            _logger.Information("Currently selected item:");
             Debug.LogItemState(currentItem);
         }
         
@@ -56,7 +63,7 @@ public class RepairScrap
             return;
         }
         
-        MelonLogger.Msg("Items to scrap-repair:");
+        _logger.Information("Items to scrap-repair:");
         foreach (var item in repairableItems)
         {
             Debug.LogItemState(item);
@@ -94,7 +101,7 @@ public class RepairScrap
 
             foreach (var item in repairableItems.Where(x => x != chosenItem))
             {
-                MelonLogger.Msg($"Deleting UID: {item.UID}");
+                _logger.Information($"Deleting UID: {item.UID}");
                 inventory.Delete(item);
             }
 

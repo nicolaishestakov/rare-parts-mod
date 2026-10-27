@@ -123,7 +123,7 @@ public sealed class TransferSettingsPanel
         if (IsOpen)
             return;
         
-        if (!_transfer.IsBarnOrJunkyard || TransferAll.CheckIfInputIsFocused())
+        if (!_transfer.IsBarnOrJunkyard || _transfer.CheckIfInputIsFocused())
             return;
 
         //_player = Singleton<GameManager>.Instance?.InputManager?.Player;

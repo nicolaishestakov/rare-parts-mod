@@ -1,12 +1,14 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using MelonLoader;
 using RareParts.Extensions;
+using RareParts.Logging;
 
 namespace RareParts;
 
 public class TempInventoryManager
 {
+    private readonly ILogger<TempInventoryManager> _logger;
+
     private TempInventory _tempInventory;
     private TempInventory TempInventory
     {
@@ -19,8 +21,9 @@ public class TempInventoryManager
 
     private readonly List<BaseItem> _customItems = [];
     
-    public TempInventoryManager()
+    public TempInventoryManager(ILogger<TempInventoryManager> logger)
     {
+        _logger = logger;
         
         Patched.OnTempInventoryCleared += OnInternalClear;
         Patched.BeforeTempInventoryCleared += BeforeInternalClear;
@@ -60,13 +63,13 @@ public class TempInventoryManager
 
     public void LogState()
     {
-        MelonLogger.Msg($"Temp Inventory contains {TempInventory.items.Count} items:");
+        _logger.Information($"Temp Inventory contains {TempInventory.items.Count} items:");
         foreach (var tempInventoryItem in TempInventory.items)
         {
             Debug.LogItemState(tempInventoryItem);
         }
         
-        MelonLogger.Msg($"Custom items contains {_customItems.Count} items:");
+        _logger.Information($"Custom items contains {_customItems.Count} items:");
         foreach (var customItem in _customItems)
         {
             Debug.LogItemState(customItem);
@@ -80,7 +83,7 @@ public class TempInventoryManager
             return;
         }
         
-        MelonLogger.Msg($"BeforeInternalClear: internal TempInventory contains {TempInventory.items.Count} items");
+        _logger.Information($"BeforeInternalClear: internal TempInventory contains {TempInventory.items.Count} items");
         
         var updatedItems = new List<BaseItem>(); 
         foreach (var item in TempInventory.items)
@@ -91,7 +94,7 @@ public class TempInventoryManager
             }
         }
         
-        MelonLogger.Msg($"BeforeInternalClear: adjusting custom items from {_customItems.Count} to {updatedItems.Count} items");
+        _logger.Information($"BeforeInternalClear: adjusting custom items from {_customItems.Count} to {updatedItems.Count} items");
         
         _customItems.Clear();
         _customItems.AddRange(updatedItems);
@@ -104,6 +107,6 @@ public class TempInventoryManager
             TempInventory.AddItem(item);
         }
         
-        MelonLogger.Msg($"OnInternalClear: restored {_customItems.Count} items");
+        _logger.Information($"OnInternalClear: restored {_customItems.Count} items");
     }
 }
