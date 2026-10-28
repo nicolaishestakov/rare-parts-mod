@@ -75,12 +75,23 @@ internal static class Program
             surface.Tick();
         }
         using (surface.Snapshot()) { }
-        Click(700, 85);
-        Check(surface.Transfer.TransferMode == TransferAll.Mode.ShopListItemsOnly, "Mode button did not select shopping-list-only.");
-        Click(700, 85);
-        Check(surface.Transfer.TransferMode == TransferAll.Mode.ByCondition, "Mode button did not cycle.");
-        Click(780, 120);
-        Check(surface.Config.MinPartCondition == 10, "Condition + button failed.");
+        Click(818, 88);
+        Check(surface.Transfer.TransferMode == TransferAll.Mode.ShopListItemsOnly, "Mode right arrow did not select shopping-list-only.");
+        Click(818, 88);
+        Check(surface.Transfer.TransferMode == TransferAll.Mode.ByCondition, "Mode right arrow did not cycle.");
+        Click(302, 88);
+        Check(surface.Transfer.TransferMode == TransferAll.Mode.ShopListItemsOnly, "Mode left arrow did not wrap backwards.");
+        Click(302, 88);
+        Check(surface.Transfer.TransferMode == TransferAll.Mode.OnlyRareRepairable, "Mode left arrow did not select the previous mode.");
+        Click(818, 88);
+        Click(818, 88);
+        Click(302, 132);
+        Check(surface.Config.MinPartCondition == 0, "Condition left arrow went below zero.");
+        Click(818, 132);
+        Click(302, 132);
+        Check(surface.Config.MinPartCondition == 0, "Condition left arrow failed.");
+        Click(818, 132);
+        Check(surface.Config.MinPartCondition == 10, "Condition right arrow failed.");
         Click(400, 295);
         Check(surface.Panel.IsEditingText, "Name filter did not receive focus.");
         foreach (var character in "oil")
@@ -93,9 +104,9 @@ internal static class Program
         Check(surface.Panel.IsOpen && surface.Transfer.CollectionCalls == 0 &&
               surface.Transfer.TransferMode == TransferAll.Mode.ByCondition && surface.Config.MinPartCondition == 10,
             "Typing in the name filter triggered a shortcut.");
-        Click(700, 85);
-        Click(700, 85);
-        Click(700, 85);
+        Click(818, 88);
+        Click(818, 88);
+        Click(818, 88);
         Click(250, 425);
         Check(surface.Transfer.CollectionCalls == 1 && surface.Transfer.LastShoppingListOnly,
             "Collection must execute once with the selected shopping-list mode.");
@@ -111,13 +122,13 @@ internal static class Program
         surface.Tick();
         Check(surface.Transfer.ReturnCalls == 2, "Shift+L should return.");
         surface.Panel.Open();
-        Click(700, 85);
+        Click(818, 88);
         surface.ReleaseKey(KeyCode.L);
         surface.Tick();
         Check(surface.Transfer.CollectionCalls == 2 && !surface.Transfer.LastShoppingListOnly,
             "Leaving shopping-list mode must stop filtering to shopping-list items.");
         surface.Panel.Open();
-        Click(700, 425);
+        Click(780, 425);
         Check(!surface.Panel.IsOpen, "Close button failed.");
         surface.Panel.Open();
         surface.ReleaseKey(KeyCode.Escape);
@@ -129,7 +140,7 @@ internal static class Program
         surface.Panel.Open();
         surface.Size = new Size(640, 480);
         using (surface.Snapshot()) { }
-        Click(780, 120);
+        Click(818, 132);
         Check(surface.Config.MinPartCondition == 20, "Scaled hit testing failed.");
         surface.Config.TransferMapsOrCasesOnlyAtBarnOrJunkyard = true;
         using (surface.Snapshot()) { }

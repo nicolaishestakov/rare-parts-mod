@@ -393,9 +393,16 @@ public class TransferAll
         Popup($"Transfer Part Condition: {_config.MinPartCondition}%");
     }
 
-    public void SwitchTransferMode()
+    public void SwitchTransferMode(bool previous = false)
     {
-        TransferMode = TransferMode switch
+        TransferMode = previous ? TransferMode switch
+        {
+            Mode.ByCondition => Mode.ShopListItemsOnly,
+            Mode.ByConditionSkipUnrepairable => Mode.ByCondition,
+            Mode.OnlyRareRepairable => Mode.ByConditionSkipUnrepairable,
+            Mode.ShopListItemsOnly => Mode.OnlyRareRepairable,
+            _ => Mode.ByCondition
+        } : TransferMode switch
         {
             Mode.ByCondition => Mode.ByConditionSkipUnrepairable,
             Mode.ByConditionSkipUnrepairable => Mode.OnlyRareRepairable,

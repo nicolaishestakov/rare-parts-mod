@@ -28,7 +28,7 @@ public sealed class TransferSettingsPanel
     private TransferRequest _transferRequested;
     private Font _gameFont;
     private float _nextFontLookup;
-    private GUIStyle _labelStyle, _buttonStyle, _titleStyle, _textFieldStyle;
+    private GUIStyle _labelStyle, _selectorStyle, _titleStyle, _textFieldStyle;
     private GUIStyle _actionStyle, _shortcutStyle;
     private readonly Dictionary<Texture, FilterMode> _fontFilters = new();
     private static readonly Color TitleBackground = new(49 / 255f, 49 / 255f, 49 / 255f, 0.97f);
@@ -305,7 +305,7 @@ public sealed class TransferSettingsPanel
         try
         {
             SmoothFont(_labelStyle);
-            SmoothFont(_buttonStyle);
+            SmoothFont(_selectorStyle);
             SmoothFont(_titleStyle);
             SmoothFont(_actionStyle);
             SmoothFont(_shortcutStyle);
@@ -385,7 +385,9 @@ public sealed class TransferSettingsPanel
 
         // Copies keep other IMGUI overlays and the game's own styles unchanged.
         _labelStyle = CreateFontStyle(GUI.skin.label);
-        _buttonStyle = CreateFontStyle(GUI.skin.button);
+        _selectorStyle = CreateFontStyle(GUIStyle.none);
+        _selectorStyle.alignment = TextAnchor.MiddleCenter;
+        _selectorStyle.normal.textColor = Color.white;
         _titleStyle = CreateFontStyle(GUIStyle.none);
         _titleStyle.fontSize = 30;
         _titleStyle.alignment = TextAnchor.MiddleCenter;
@@ -462,7 +464,55 @@ public sealed class TransferSettingsPanel
     }
 
     private void DrawLabel(Rect rect, string text) => GUI.Label(rect, text, _labelStyle);
-    private bool DrawButton(Rect rect, string text) => GUI.Button(rect, text, _buttonStyle);
+
+    private int DrawSelector(Rect rect, string value)
+    {
+        var previousColor = GUI.color;
+        try
+        {
+            if (Event.current.type == EventType.Repaint)
+            {
+                FillRect(rect, PanelBorder);
+                FillRect(new Rect(rect.x + 1, rect.y + 1, rect.width - 2, rect.height - 2),
+                    new Color(40 / 255f, 40 / 255f, 40 / 255f));
+            }
+
+            GUI.color = Color.white;
+            const float arrowWidth = 44;
+            var previous = DrawSelectorArrow(new Rect(rect.x + 1, rect.y + 1, arrowWidth, rect.height - 2), false);
+            var next = DrawSelectorArrow(new Rect(rect.xMax - arrowWidth - 1, rect.y + 1, arrowWidth, rect.height - 2), true);
+            GUI.Label(new Rect(rect.x + arrowWidth + 1, rect.y,
+                rect.width - 2 * arrowWidth - 2, rect.height), value, _selectorStyle);
+            return previous ? -1 : next ? 1 : 0;
+        }
+        finally
+        {
+            GUI.color = previousColor;
+        }
+    }
+
+    private static bool DrawSelectorArrow(Rect rect, bool right)
+    {
+        var hovered = rect.Contains(Event.current.mousePosition);
+        var clicked = GUI.Button(rect, string.Empty, GUIStyle.none);
+        if (Event.current.type != EventType.Repaint)
+            return clicked;
+
+        var previousColor = GUI.color;
+        // Draw solid chevrons directly so their shape does not depend on the game font.
+        const int height = 20;
+        const float thickness = 7;
+        var x = rect.x + (rect.width - (height / 2f + thickness)) / 2;
+        var y = rect.y + (rect.height - height) / 2;
+        for (var row = 0; row < height; row++)
+        {
+            var inset = row < height / 2 ? row : height - 1 - row;
+            var offset = right ? inset : height / 2f - 1 - inset;
+            FillRect(new Rect(x + offset, y + row, thickness, 1), hovered ? SeparatorColor : Color.white);
+        }
+        GUI.color = previousColor;
+        return clicked;
+    }
 
     private float ShortcutWidth(string shortcut) => Mathf.Max(30, _shortcutStyle.CalcSize(new GUIContent(shortcut)).x + 16);
 
@@ -560,14 +610,16 @@ public sealed class TransferSettingsPanel
             TransferAll.Mode.ShopListItemsOnly => "Shopping-list items only",
             _ => "Only rare repairable"
         };
-        Row(70, "MODE", mode);
-        if (DrawButton(new Rect(600, 70, 240, 30), $"CHANGE ({_config.SwitchModeKey.ToShortcutString()})"))
-            _transfer.SwitchTransferMode();
+        DrawLabel(new Rect(20, 78, 250, 30), $"MODE ({_config.SwitchModeKey.ToShortcutString()})");
+        var modeChange = DrawSelector(new Rect(280, 70, 560, 36), mode);
+        if (modeChange != 0)
+            _transfer.SwitchTransferMode(previous: modeChange < 0);
 
-        Row(105, "MIN CONDITION", $"{_config.MinPartCondition}%");
-        if (DrawButton(new Rect(600, 105, 110, 30), "-"))
+        DrawLabel(new Rect(20, 122, 250, 30), "MIN CONDITION");
+        var conditionChange = DrawSelector(new Rect(280, 114, 560, 36), $"{_config.MinPartCondition}%");
+        if (conditionChange < 0)
             _config.SetPartConditionLowerBy10();
-        if (DrawButton(new Rect(730, 105, 110, 30), "+"))
+        if (conditionChange > 0)
             _config.SetPartConditionHigherBy10();
 
         Row(185, "Maps / cases filter (config)", OnOff(_config.TransferMapsOrCasesOnlyAtBarnOrJunkyard));

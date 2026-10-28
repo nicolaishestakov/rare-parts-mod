@@ -35,7 +35,8 @@ namespace RareParts
         public int CollectionCalls { get; private set; }
         public int ReturnCalls { get; private set; }
         public bool LastShoppingListOnly { get; private set; }
-        public void SwitchTransferMode() => TransferMode = (Mode)(((int)TransferMode + 1) % 4);
+        public void SwitchTransferMode(bool previous = false) =>
+            TransferMode = (Mode)(((int)TransferMode + (previous ? 3 : 1)) % 4);
         public string LastNameFilter { get; private set; }
         public void CollectEntireJunkyardOrBarn(string nameFilter = null)
         {
