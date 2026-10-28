@@ -56,14 +56,59 @@ public class ScrapRepairCalculatorTests
         Assert.Same(part, Assert.Single(Select([part], 0.15f)));
     }
 
-    [Fact]
-    public void NonRepairablePartsAreAllUsedRegardlessOfCondition()
+    [Theory]
+    [InlineData(0.15f)]
+    [InlineData(0.8f)]
+    [InlineData(1f)]
+    public void NonRepairablePartsAreAllUsedRegardlessOfCondition(float threshold)
     {
         var parts = Parts(0f, 0.4f, 1f);
 
-        var selected = Select(parts, 1f, isNonRepairable: true);
+        var selected = Select(parts, threshold, isNonRepairable: true);
 
         Assert.Equal(parts, selected);
+    }
+
+    [Fact]
+    public void MaximumConditionUsesAllDamagedPartsIncludingAlreadyRepairableOnes()
+    {
+        var parts = Parts(0.1f, 0.1f, 0.15f, 0.8f, 0.9f);
+        var original = parts.ToArray();
+
+        Assert.Equal(parts.Take(2), Select(parts, 0.15f));
+
+        var selected = Select(parts, 1f);
+
+        Assert.Equal(original, selected);
+        Assert.Equal(original, parts);
+        AssertClose(0.98623f, ScrapRepairCalculator.GetRepairedCondition(selected.Select(p => p.Condition)));
+    }
+
+    [Fact]
+    public void MaximumConditionExcludesFullyRepairedParts()
+    {
+        var parts = Parts(1f, 0.4f, 0.9f, 1f);
+
+        Assert.Equal(new[] { parts[1], parts[2] }, Select(parts, 1f));
+        Assert.Empty(Select(Parts(1f, 1f), 1f));
+    }
+
+    [Fact]
+    public void MaximumConditionIncludesZeroConditionParts()
+    {
+        var parts = Parts(0f, 0.4f, 0f, 0.9f);
+
+        Assert.Equal(parts, Select(parts, 1f));
+        Assert.Equal(parts.Take(1), Select(parts.Take(1).ToList(), 1f));
+        Assert.Empty(Select([], 1f));
+    }
+
+    [Fact]
+    public void MaximumConditionUsesEveryPartEvenWhenCombinedDamageUnderflows()
+    {
+        var parts = Enumerable.Range(0, 128).Select(_ => new Part(0.999f)).ToList();
+
+        Assert.Equal(parts, Select(parts, 1f));
     }
 
     [Theory]

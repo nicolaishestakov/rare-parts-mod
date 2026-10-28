@@ -115,7 +115,7 @@ public class RarePartsMod : MelonMod
 
         if (Input.GetKeyUp(_config.ScrapRepairKey))
         {
-            _repairScrap.Repair();
+            _repairScrap.Repair(true);
         }
 
         if (Input.GetKeyUp(_config.PartsToFixToShoppingListKey))
@@ -203,9 +203,11 @@ public class RarePartsMod : MelonMod
         if (lastWindowId?.Value != WindowID.Scrap)
             return;
 
-        GUI.Box(new Rect(20, 64, 300, 80), "Rare Parts");
-        if (GUI.Button(new Rect(30, 96, 280, 32), "Scrap-repair items"))
-            _repairScrap.Repair();
+        GUI.Box(new Rect(20, 64, 400, 112), "Rare Parts");
+        if (GUI.Button(new Rect(30, 96, 380, 32), "Scrap-repair items to minimal repairable condition"))
+            _repairScrap.Repair(true);
+        if (GUI.Button(new Rect(30, 128, 380, 32), "Scrap-repair items to available maximum"))
+            _repairScrap.Repair(false);
     }
 
     private void UpdateButtonsState()

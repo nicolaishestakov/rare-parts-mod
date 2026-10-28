@@ -33,6 +33,13 @@ public static class ScrapRepairCalculator
             return items;
         }
 
+        // Maximum mode consumes every damaged part. Avoid subset selection even
+        // when multiplying many damage levels underflows to zero.
+        if (minConditionToRepair == 1f)
+        {
+            return items.Where(x => getCondition(x) < 1f).ToList();
+        }
+
         double damageLevel = 1 - minConditionToRepair;
         
         return FilterOptimalItems(items.Where(x => 1.0f - getCondition(x) > damageLevel).ToList(), getCondition, damageLevel);

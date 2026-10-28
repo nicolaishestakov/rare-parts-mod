@@ -18,7 +18,17 @@ public class RepairScrap
         _logger = logger;
     }
 
-    public void Repair()
+    /// <summary>
+    /// Repairs items by merging multiple identical parts into one with a better condition. Ignores 100% items.
+    /// Shows a confirmation dialog before repairing, showing parts and the resulting condition.
+    /// The part currently selected in the scrap window takes precedence for merging.
+    /// </summary>
+    /// <param name="repairToMinConditionOnly">'True' to repair to the minimal condition allowing the resulting item
+    /// to be repaired on the classical repair table (from 15% for the non-rare parts).
+    /// Selects one group per invocation, preserving remaining parts for subsequent repairs (e.g., valve rods).
+    /// Parts that cannot be repaired on a repair table are always merged using all identical damaged parts.
+    /// 'False' to repair to the maximum available condition (all identical damaged parts will be merged into one).</param>
+    public void Repair(bool repairToMinConditionOnly)
     {
         var scrapWindow = GetScrapWindowIfActive();
 
@@ -29,7 +39,7 @@ public class RepairScrap
         }
         
         var inventory = Singleton<Inventory>.Instance;
-        RepairFromInventory(inventory, scrapWindow);
+        RepairFromInventory(inventory, scrapWindow, repairToMinConditionOnly);
     }
 
     private static ScrapWindow GetScrapWindowIfActive()
@@ -43,8 +53,8 @@ public class RepairScrap
 
         return windowManager.GetWindowByID<ScrapWindow>(WindowID.Scrap);
     }
-    
-    public void RepairFromInventory(Inventory inventory, ScrapWindow scrapWindow)
+
+    private void RepairFromInventory(Inventory inventory, ScrapWindow scrapWindow, bool repairToMinConditionOnly)
     {
         var currentItem = GetCurrentItem(scrapWindow); // if an item is selected, it has priority to repair
 
@@ -54,7 +64,7 @@ public class RepairScrap
             Debug.LogItemState(currentItem);
         }
         
-        var repairableItems = GetRepairableItems(inventory, currentItem?.ID);
+        var repairableItems = GetRepairableItems(inventory, currentItem?.ID, repairToMinConditionOnly);
         var uiManager = UIManager.Get();
         
         if (repairableItems.Count < 2)
@@ -129,7 +139,7 @@ public class RepairScrap
 
     private static string ConditionToPercent(float condition) => $"{(int)(condition * 100)}%";
 
-    private static IEnumerable<List<Item>> GetRepairableItemGroups(Inventory inventory, string priorId)
+    private static IEnumerable<List<Item>> GetRepairableItemGroups(Inventory inventory, string priorId, bool repairToMinConditionOnly)
     {
         return inventory.items.ToEnumerable()
             .Where(x => x.Condition < 1)
@@ -137,18 +147,18 @@ public class RepairScrap
             .OrderBy(x => x.Key == priorId ? 0 : 1)
             .ThenByDescending(x => x.Count())
             .ThenBy(x => x.Sum(y => y.Condition))
-            .Select(x => FilterOptimalItems(x.ToList()));
+            .Select(x => FilterOptimalItems(x.ToList(), repairToMinConditionOnly));
     }
 
-    private List<Item> GetRepairableItems(Inventory inventory, string priorId)
+    private List<Item> GetRepairableItems(Inventory inventory, string priorId, bool repairToMinConditionOnly)
     {
-        var itemsGroup = GetRepairableItemGroups(inventory, priorId)
+        var itemsGroup = GetRepairableItemGroups(inventory, priorId, repairToMinConditionOnly)
             .FirstOrDefault(x => x.Count > 1);
 
         return itemsGroup ?? [];
     }
 
-    private static List<Item> FilterOptimalItems(List<Item> items)
+    private static List<Item> FilterOptimalItems(List<Item> items, bool repairToMinConditionOnly)
     {
         if (items.Count < 2)
         {
@@ -156,8 +166,10 @@ public class RepairScrap
         }
 
         var sample = items[0];
+        var minConditionToRepair = repairToMinConditionOnly ? sample.MinConditionToRepair : 1.0f;
+
         return ScrapRepairCalculator.FilterOptimalItems(
-            items, item => item.Condition, sample.MinConditionToRepair,
+            items, item => item.Condition, minConditionToRepair,
             PartsInfo.NonRepairableParts.Contains(sample.ID));
     }
 }
