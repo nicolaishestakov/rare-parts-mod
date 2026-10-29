@@ -186,8 +186,13 @@ public static class GUI
         color = Color.white;
     }
 
+    internal static RectangleF LastGroupBounds { get; private set; }
+    internal static float LastGroupScale { get; private set; }
+
     public static void BeginGroup(Rect rect)
     {
+        LastGroupBounds = ToScreen(rect);
+        LastGroupScale = matrix.Scale;
         _groupState = Graphics.Save();
         Graphics.SetClip(ToScreen(rect));
         GroupX = rect.x;

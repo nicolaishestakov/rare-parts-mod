@@ -67,14 +67,29 @@ internal static class Program
         // the stand-in transfer methods. Layout changes may require updating them.
         void Click(float x, float y)
         {
-            var scale = Math.Min(1f, Math.Min(surface.Width / 880f, surface.Height / 480f));
-            var point = new Point((int)((surface.Width - 860 * scale) / 2 + x * scale),
-                (int)((surface.Height - 460 * scale) / 2 + y * scale));
+            var bounds = GUI.LastGroupBounds;
+            var scale = GUI.LastGroupScale;
+            var point = new Point((int)(bounds.X + x * scale), (int)(bounds.Y + y * scale));
             surface.Dispatch(EventType.MouseDown, point);
             surface.Dispatch(EventType.MouseUp, point);
             surface.Tick();
         }
         using (surface.Snapshot()) { }
+        Check(surface.Config.MoveMaps && surface.Config.MoveCases, "Maps and cases should be enabled by default.");
+        for (var mode = 0; mode < 4; mode++)
+        {
+            var originalMode = surface.Transfer.TransferMode;
+            Click(818, 176);
+            Check(!surface.Config.MoveMaps && surface.Config.MoveCases, "Move maps must toggle independently.");
+            Click(302, 220);
+            Check(!surface.Config.MoveMaps && !surface.Config.MoveCases, "Move cases must toggle independently.");
+            Check(surface.Transfer.TransferMode == originalMode && surface.Config.MinPartCondition == 0,
+                "Map/case controls must preserve mode and condition.");
+            Click(302, 176);
+            Click(818, 220);
+            Check(surface.Config.MoveMaps && surface.Config.MoveCases, "Both toggle directions should work.");
+            Click(818, 88);
+        }
         Click(818, 88);
         Check(surface.Transfer.TransferMode == TransferAll.Mode.ShopListItemsOnly, "Mode right arrow did not select shopping-list-only.");
         Click(818, 88);
@@ -128,7 +143,7 @@ internal static class Program
         Check(surface.Transfer.CollectionCalls == 2 && !surface.Transfer.LastShoppingListOnly,
             "Leaving shopping-list mode must stop filtering to shopping-list items.");
         surface.Panel.Open();
-        Click(780, 425);
+        Click(830, 425);
         Check(!surface.Panel.IsOpen, "Close button failed.");
         surface.Panel.Open();
         surface.ReleaseKey(KeyCode.Escape);
@@ -142,9 +157,12 @@ internal static class Program
         using (surface.Snapshot()) { }
         Click(818, 132);
         Check(surface.Config.MinPartCondition == 20, "Scaled hit testing failed.");
-        surface.Config.TransferMapsOrCasesOnlyAtBarnOrJunkyard = true;
-        using (surface.Snapshot()) { }
-        surface.Config.TransferMapsOrCasesOnlyAtBarnOrJunkyard = false;
+        Click(818, 176);
+        Click(818, 220);
+        Check(!surface.Config.MoveMaps && !surface.Config.MoveCases, "Scaled map/case hit testing failed.");
+        surface.Panel.Close();
+        surface.Panel.Open();
+        Check(!surface.Config.MoveMaps && !surface.Config.MoveCases, "Map/case settings should survive reopening.");
         surface.Size = new Size(1000, 680);
         Console.WriteLine("Panel preview self-test passed.");
     }
@@ -165,8 +183,6 @@ internal sealed class PreviewWindow : Form
         var reopen = new Button { Text = "Open / close (F7)", AutoSize = true };
         reopen.Click += (_, _) => { _surface.Panel.Toggle(); _surface.Focus(); };
         toolbar.Controls.Add(reopen);
-        AddOption("Maps / cases filter", false, value => _surface.Config.TransferMapsOrCasesOnlyAtBarnOrJunkyard = value);
-        AddOption("Parts filter", false, value => _surface.Config.TransferPartsOnlyAtBarnOrJunkyard = value);
         AddOption("In barn / junkyard", true, value => _surface.Transfer.IsBarnOrJunkyard = value);
         Controls.Add(_surface);
         Controls.Add(toolbar);
@@ -293,9 +309,7 @@ internal sealed class PreviewSurface : Control
     private void UpdateCursor()
     {
         if (!IsHandleCreated) return;
-        var scale = Math.Min(1f, Math.Min(Width / 880f, Height / 480f));
-        var bounds = new RectangleF((Width - 860 * scale) / 2, (Height - 460 * scale) / 2,
-            860 * scale, 460 * scale);
+        var bounds = GUI.LastGroupBounds;
         var hide = Panel.IsOpen && bounds.Contains(_mouse);
         if (hide == _cursorHidden) return;
         if (hide) System.Windows.Forms.Cursor.Hide();

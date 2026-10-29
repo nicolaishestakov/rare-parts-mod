@@ -927,16 +927,24 @@ namespace RareParts
         private readonly MelonPreferences_Entry<bool> _transferByCategory;
         
         /// <summary>
-        /// User setting to select whether the TransferEntire key only moves parts and not body parts.
+        /// Include maps alongside parts selected by the current transfer mode.
         /// </summary>
-        public bool TransferPartsOnlyAtBarnOrJunkyard => _transferPartsOnlyAtBarnOrJunkyard.Value;
-        private readonly MelonPreferences_Entry<bool> _transferPartsOnlyAtBarnOrJunkyard;
+        public bool MoveMaps
+        {
+            get => _moveMaps.Value;
+            set => _moveMaps.Value = value;
+        }
+        private readonly MelonPreferences_Entry<bool> _moveMaps;
         
         /// <summary>
-        /// User setting to select whether the TransferEntire key only moves maps or cases and nothing else.
+        /// Include cases alongside parts selected by the current transfer mode.
         /// </summary>
-        public bool TransferMapsOrCasesOnlyAtBarnOrJunkyard => _transferMapsOrCasesOnlyAtBarnOrJunkyard.Value;
-        private readonly MelonPreferences_Entry<bool> _transferMapsOrCasesOnlyAtBarnOrJunkyard;
+        public bool MoveCases
+        {
+            get => _moveCases.Value;
+            set => _moveCases.Value = value;
+        }
+        private readonly MelonPreferences_Entry<bool> _moveCases;
 
         /// <summary>
         /// Warehouses to move Shopping List items to when using TransferAll.
@@ -1050,10 +1058,10 @@ namespace RareParts
                 description: "This will display a warning if the items/groups are above this number (to prevent large moves by accident).");
             _transferByCategory = transferAllCategory.CreateEntry(nameof(TransferByCategory), true,
                 description: "Set this to false and the TransferAllItemsAndGroups key will move all items regardless of the selected category (engine, suspension, etc.).");
-            _transferPartsOnlyAtBarnOrJunkyard = transferAllCategory.CreateEntry(nameof(TransferPartsOnlyAtBarnOrJunkyard), false,
-                description: "Set this to true and only non-body parts are moved to the Shopping Cart in the Barn/Junkyard.");
-            _transferMapsOrCasesOnlyAtBarnOrJunkyard = transferAllCategory.CreateEntry(nameof(TransferMapsOrCasesOnlyAtBarnOrJunkyard), false,
-                description: "Set this to true and only maps or cases are moved to the Shopping Cart in the Barn/Junkyard." + Il2CppSystem.Environment.NewLine + "THIS OVERRIDES THE TransferPartsOnlyAtBarnOrJunkyard SETTING ABOVE.");
+            _moveMaps = transferAllCategory.CreateEntry(nameof(MoveMaps), true,
+                description: "Include maps when collecting from the Barn/Junkyard, in addition to parts selected by the current mode. The name filter still applies.");
+            _moveCases = transferAllCategory.CreateEntry(nameof(MoveCases), true,
+                description: "Include cases when collecting from the Barn/Junkyard, in addition to parts selected by the current mode. The name filter still applies.");
             _switchModeKey = transferAllCategory.CreateEntry(nameof(SwitchModeKey), KeyCode.KeypadMultiply,
                 description: "Press the key to switch between the By Condition/Skip Unrepairable/Only Rare Repairable modes.");
             _moveShoppingListWarehouses = transferAllCategory.CreateEntry(nameof(MoveShoppingListWarehouses), DefaultMoveShoppingListWarehouses,

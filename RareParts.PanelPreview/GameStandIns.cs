@@ -16,8 +16,8 @@ namespace RareParts
         public int MinPartCondition { get; set; }
         public int MinNumOfItemsWarning => 500;
         public bool TransferByCategory => true;
-        public bool TransferPartsOnlyAtBarnOrJunkyard { get; set; }
-        public bool TransferMapsOrCasesOnlyAtBarnOrJunkyard { get; set; }
+        public bool MoveMaps { get; set; } = true;
+        public bool MoveCases { get; set; } = true;
         public int[] MoveShoppingListWarehouses => [1, 2];
         public int SetPartConditionLowerBy10() => MinPartCondition = Math.Max(0,
             MinPartCondition - (MinPartCondition is 90 or 85 ? 5 : 10));

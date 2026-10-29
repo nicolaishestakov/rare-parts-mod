@@ -640,25 +640,25 @@ public sealed class TransferSettingsPanel
         if (conditionChange > 0)
             _config.SetPartConditionHigherBy10();
 
-        Row(185, "Maps / cases filter (config)", OnOff(_config.TransferMapsOrCasesOnlyAtBarnOrJunkyard));
-        Row(215, "Parts filter (config)", OnOff(_config.TransferPartsOnlyAtBarnOrJunkyard));
+        DrawLabel(new Rect(20, 166, 250, 30), "Move maps");
+        if (DrawSelector(new Rect(280, 158, 560, 36), OnOff(_config.MoveMaps)) != 0)
+            _config.MoveMaps = !_config.MoveMaps;
+        DrawLabel(new Rect(20, 210, 250, 30), "Move cases");
+        if (DrawSelector(new Rect(280, 202, 560, 36), OnOff(_config.MoveCases)) != 0)
+            _config.MoveCases = !_config.MoveCases;
         Row(245, "Repair thresholds", $"Normal: {PartsInfo.NormalRepairablePartsMinCondition * 100:0}%   Special: {PartsInfo.SpecialRepairablePartsMinCondition * 100:0}%");
         DrawLabel(new Rect(20, 280, 250, 30), "NAME CONTAINS");
         GUI.SetNextControlName(NameFilterControl);
         _nameFilter = GUI.TextField(NameFilterRect, _nameFilter, _textFieldStyle);
 
         var onlyShoppingList = _transfer.TransferMode == TransferAll.Mode.ShopListItemsOnly;
-        var specialFilter = !onlyShoppingList &&
-            (_config.TransferMapsOrCasesOnlyAtBarnOrJunkyard || _config.TransferPartsOnlyAtBarnOrJunkyard);
         var explanation = onlyShoppingList
-            ? "Shopping-list matches of any condition, plus maps and cases.\nMinimum condition and config filters are ignored."
-            : specialFilter
-                ? "Config filters select their combined categories directly.\nMode, condition and shopping-list inclusion are bypassed."
-                : "Shopping-list matches, maps and cases are always included.\n" +
-                  (_transfer.TransferMode == TransferAll.Mode.OnlyRareRepairable
-                      ? "Minimum condition is ignored in rare repairable mode."
-                      : "Other parts use the selected mode and minimum condition.");
-        DrawLabel(new Rect(20, 320, 820, 60), explanation + "\nName filter applies to all results; blank matches all names.");
+            ? "Shopping-list parts of any condition; minimum condition is ignored."
+            : _transfer.TransferMode == TransferAll.Mode.OnlyRareRepairable
+                ? "Shopping-list parts and rare repairable parts; minimum condition is ignored."
+                : "Shopping-list parts always included; other parts use mode and minimum condition.";
+        explanation += "\nMaps and cases are included when enabled above, in every mode.";
+        DrawLabel(new Rect(20, 314, 820, 66), explanation + "\nName filter applies to all results; blank matches all names.");
     }
 
     private void Row(float y, string label, string value)

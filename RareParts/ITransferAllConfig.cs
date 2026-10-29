@@ -47,14 +47,14 @@ namespace RareParts
         bool TransferByCategory { get; }
         
         /// <summary>
-        /// User setting to select whether the TransferEntire key only moves parts and not body parts.
+        /// Include maps alongside parts selected by the current transfer mode.
         /// </summary>
-        bool TransferPartsOnlyAtBarnOrJunkyard { get; }
+        bool MoveMaps { get; set; }
         
         /// <summary>
-        /// User setting to select whether the TransferEntire key only moves maps or cases and nothing else.
+        /// Include cases alongside parts selected by the current transfer mode.
         /// </summary>
-        bool TransferMapsOrCasesOnlyAtBarnOrJunkyard { get; }
+        bool MoveCases { get; set; }
 
         /// <summary>
         /// Method to change the MinPartCondition setting lower by 10%.

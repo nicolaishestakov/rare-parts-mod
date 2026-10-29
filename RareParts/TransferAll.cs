@@ -537,27 +537,6 @@ public class TransferAll
         var items = new List<Item>();
         var groups = new List<GroupItem>();
 
-        if (TransferMode != Mode.ShopListItemsOnly &&
-            (_config.TransferMapsOrCasesOnlyAtBarnOrJunkyard || _config.TransferPartsOnlyAtBarnOrJunkyard))
-        {
-            if (_config.TransferMapsOrCasesOnlyAtBarnOrJunkyard)
-            {
-                items.AddRange(junkItems.ToEnumerable()
-                    .Where(x => x.IsMap || x.IsCase)
-                    .Select(x => x.TryCast<Item>())
-                    .Where(x => x is not null));
-            }
-
-            if (_config.TransferPartsOnlyAtBarnOrJunkyard)
-            {
-                items.AddRange(UIHelper.GetBodyItems(junkItems).ToEnumerable()
-                    .Select(x => x.TryCast<Item>())
-                    .Where(x => x is not null));
-            }
-
-            return (items, groups);
-        }
-
         foreach (var junkItem in junkItems)
         {
             if (IsToBeMoved(junkItem, includeShopListItems))
@@ -585,11 +564,12 @@ public class TransferAll
     {
         //_logger.Information($"Checking {baseItem.ID}");
 
-        if (baseItem.IsMap || baseItem.IsCase)
-        {
-            // map or case - always moved
-            return true;
-        }
+        // These independent options apply in every mode. Disabled categories must
+        // not fall through to shopping-list or condition-based part selection.
+        if (baseItem.IsMap)
+            return _config.MoveMaps;
+        if (baseItem.IsCase)
+            return _config.MoveCases;
 
         if (includeShopListItems.Contains(baseItem.ID))
         {
