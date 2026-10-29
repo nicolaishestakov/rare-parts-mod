@@ -1063,7 +1063,7 @@ namespace RareParts
             _moveShoppingListToInventoryKey = transferAllCategory.CreateEntry(nameof(MoveShoppingListToInventoryKey), KeyCode.F6,
                 description: "Press this key to search and move Shopping List items from Warehouse(s) to Inventory. The items found and moved are removed from the Shopping List, unless pressed with the shift key.");
             _partsToFixToShoppingListKey = transferAllCategory.CreateEntry(nameof(PartsToFixToShoppingListKey), KeyCode.X,
-                description: "Add one copy of the currently selected part on the Issues to fix tab to the shopping list. Hold Shift to add all marked parts from every page of the selected issue, topping up only missing quantities.");
+                description: "Add one copy of the currently selected part on the car Parts or Issues to fix tab to the shopping list. On Issues to fix, hold Shift to add all marked parts from every page of the selected issue, topping up only missing quantities.");
             _specialRepairablePartsMinCondition = transferAllCategory.CreateEntry(nameof(SpecialRepairablePartsMinCondition), 80,
                 description: "Minimum condition (0..100) for a Special Repairable part to be considered repairable.");
             

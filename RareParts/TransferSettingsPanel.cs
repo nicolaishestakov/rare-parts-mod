@@ -314,7 +314,7 @@ public sealed class TransferSettingsPanel
                 GUI.FocusControl(null);
             DrawPanelBackground(width, titleHeight, bodyBottom);
             GUI.color = Color.white;
-            GUI.Label(new Rect(1, 1, width - 2, titleHeight - 1), "TRANSFER ALL ITEMS", _titleStyle);
+            DrawText(new Rect(1, 1, width - 2, titleHeight - 1), "TRANSFER ALL ITEMS", _titleStyle);
             DrawSettings();
             IsEditingText = GUI.GetNameOfFocusedControl() == NameFilterControl;
             if (DrawAction(new Rect(20, actionY, collectWidth, 36), collectShortcut, collectLabel))
@@ -389,11 +389,12 @@ public sealed class TransferSettingsPanel
         _selectorStyle.alignment = TextAnchor.MiddleCenter;
         _selectorStyle.normal.textColor = Color.white;
         _titleStyle = CreateFontStyle(GUIStyle.none);
-        _titleStyle.fontSize = 30;
+        _titleStyle.fontSize = 32;
         _titleStyle.alignment = TextAnchor.MiddleCenter;
         _titleStyle.normal.textColor = Color.white;
         _textFieldStyle = CreateFontStyle(GUI.skin.textField);
         _actionStyle = CreateFontStyle(GUIStyle.none);
+        _actionStyle.fontSize++;
         _actionStyle.alignment = TextAnchor.MiddleLeft;
         _shortcutStyle = CreateFontStyle(GUIStyle.none);
         _shortcutStyle.alignment = TextAnchor.MiddleCenter;
@@ -455,7 +456,8 @@ public sealed class TransferSettingsPanel
     private GUIStyle CreateFontStyle(GUIStyle source)
     {
         var style = new GUIStyle(source);
-        style.fontSize = (source.fontSize > 0 ? source.fontSize : 13) + 5;
+        style.fontSize = (source.fontSize > 0 ? source.fontSize : 13) + 6;
+        style.fontStyle = FontStyle.Normal;
         if (_gameFont != null)
         {
             style.font = _gameFont;
@@ -463,7 +465,24 @@ public sealed class TransferSettingsPanel
         return style;
     }
 
-    private void DrawLabel(Rect rect, string text) => GUI.Label(rect, text, _labelStyle);
+    private void DrawLabel(Rect rect, string text) => DrawText(rect, text, _labelStyle);
+
+    private static void DrawText(Rect rect, string text, GUIStyle style)
+    {
+        GUI.Label(rect, text, style);
+        // A faint subpixel overdraw adds a little weight without bold glyphs
+        // or changing text measurements. Keep editable text on its native path.
+        var previousColor = GUI.color;
+        try
+        {
+            GUI.color = new Color(previousColor.r, previousColor.g, previousColor.b, previousColor.a * 0.35f);
+            GUI.Label(new Rect(rect.x + 0.35f, rect.y, rect.width, rect.height), text, style);
+        }
+        finally
+        {
+            GUI.color = previousColor;
+        }
+    }
 
     private int DrawSelector(Rect rect, string value)
     {
@@ -481,7 +500,7 @@ public sealed class TransferSettingsPanel
             const float arrowWidth = 44;
             var previous = DrawSelectorArrow(new Rect(rect.x + 1, rect.y + 1, arrowWidth, rect.height - 2), false);
             var next = DrawSelectorArrow(new Rect(rect.xMax - arrowWidth - 1, rect.y + 1, arrowWidth, rect.height - 2), true);
-            GUI.Label(new Rect(rect.x + arrowWidth + 1, rect.y,
+            DrawText(new Rect(rect.x + arrowWidth + 1, rect.y,
                 rect.width - 2 * arrowWidth - 2, rect.height), value, _selectorStyle);
             return previous ? -1 : next ? 1 : 0;
         }
@@ -528,9 +547,9 @@ public sealed class TransferSettingsPanel
         var badgeWidth = ShortcutWidth(shortcut);
         var badge = new Rect(rect.x, rect.y + 3, badgeWidth, 30);
         DrawShortcutBadge(badge);
-        GUI.Label(badge, shortcut, _shortcutStyle);
+        DrawText(new Rect(badge.x, badge.y + 2, badge.width, badge.height), shortcut, _shortcutStyle);
         _actionStyle.normal.textColor = hovered ? SeparatorColor : ActionForeground;
-        GUI.Label(new Rect(badge.xMax + 12, rect.y, rect.width - badgeWidth - 12, rect.height), label, _actionStyle);
+        DrawText(new Rect(badge.xMax + 12, rect.y, rect.width - badgeWidth - 12, rect.height), label, _actionStyle);
         return clicked;
     }
 
@@ -539,18 +558,17 @@ public sealed class TransferSettingsPanel
         if (Event.current.type != EventType.Repaint)
             return;
 
-        // Unity's rounded-rectangle shader smooths both the outer and inner edges.
-        const float radius = 6, border = 1.5f;
+        // Draw a single outline instead of subtracting two antialiased fills:
+        // the fractional inset made opposite edges appear uneven.
+        const float radius = 6, border = 2;
         var previousColor = GUI.color;
         try
         {
             GUI.color = Color.white;
             GUI.DrawTexture(rect, Texture2D.whiteTexture, ScaleMode.StretchToFill,
-                true, 0, ShortcutForeground, 0, radius);
-            var interior = new Rect(rect.x + border, rect.y + border,
-                rect.width - 2 * border, rect.height - 2 * border);
-            GUI.DrawTexture(interior, Texture2D.whiteTexture, ScaleMode.StretchToFill,
-                true, 0, ShortcutBackground, 0, radius - border);
+                true, 0, ShortcutBackground, 0, radius);
+            GUI.DrawTexture(rect, Texture2D.whiteTexture, ScaleMode.StretchToFill,
+                true, 0, ShortcutForeground, border, radius);
         }
         finally
         {

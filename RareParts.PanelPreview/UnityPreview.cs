@@ -90,6 +90,7 @@ public class Event
 public enum ScaleMode { StretchToFill }
 public enum TextAnchor { UpperLeft, UpperCenter, MiddleLeft, MiddleCenter }
 public enum FilterMode { Point, Bilinear, Trilinear }
+public enum FontStyle { Normal, Bold, Italic, BoldAndItalic }
 public class Texture { public FilterMode filterMode; }
 public class Material { public Texture mainTexture { get; } = new Texture2D(); }
 public class Texture2D : Texture { public static readonly Texture2D whiteTexture = new(); }
@@ -100,6 +101,7 @@ public class GUIStyle
 {
     internal string Kind;
     public int fontSize;
+    public FontStyle fontStyle;
     public Font font;
     public TextAnchor alignment;
     public RectOffset padding = new();
@@ -110,6 +112,7 @@ public class GUIStyle
     {
         Kind = source.Kind;
         fontSize = source.fontSize;
+        fontStyle = source.fontStyle;
         font = source.font;
         alignment = source.alignment;
         padding.top = source.padding.top;
@@ -198,7 +201,14 @@ public static class GUI
     private static RectangleF ToScreen(Rect rect) => new((rect.x + GroupX) * matrix.Scale,
         (rect.y + GroupY) * matrix.Scale, rect.width * matrix.Scale, rect.height * matrix.Scale);
     internal static System.Drawing.Font DrawingFont(GUIStyle style, float scale) =>
-        new(FontFamily, Math.Max(1, (style.fontSize > 0 ? style.fontSize : 13) * scale), FontStyle.Regular, GraphicsUnit.Pixel);
+        new(FontFamily, Math.Max(1, (style.fontSize > 0 ? style.fontSize : 13) * scale),
+            style.fontStyle switch
+            {
+                FontStyle.Bold => System.Drawing.FontStyle.Bold,
+                FontStyle.Italic => System.Drawing.FontStyle.Italic,
+                FontStyle.BoldAndItalic => System.Drawing.FontStyle.Bold | System.Drawing.FontStyle.Italic,
+                _ => System.Drawing.FontStyle.Regular
+            }, GraphicsUnit.Pixel);
 
     public static void DrawTexture(Rect rect, Texture2D texture, ScaleMode mode = ScaleMode.StretchToFill, bool alphaBlend = true)
     {
@@ -212,7 +222,10 @@ public static class GUI
     {
         if (Event.current.type != EventType.Repaint) return;
         var bounds = ToScreen(rect);
-        var diameter = borderRadius * 2 * matrix.Scale;
+        var strokeWidth = borderWidth * matrix.Scale;
+        // GDI+ centers strokes on the path; Unity keeps the outline inside the rect.
+        bounds.Inflate(-strokeWidth / 2, -strokeWidth / 2);
+        var diameter = Math.Max(1, borderRadius * 2 * matrix.Scale - strokeWidth);
         using var path = new GraphicsPath();
         path.AddArc(bounds.Left, bounds.Top, diameter, diameter, 180, 90);
         path.AddArc(bounds.Right - diameter, bounds.Top, diameter, diameter, 270, 90);
@@ -223,8 +236,16 @@ public static class GUI
         try
         {
             Graphics.SmoothingMode = SmoothingMode.AntiAlias;
-            using var brush = new SolidBrush(tint.Drawing);
-            Graphics.FillPath(brush, path);
+            if (strokeWidth > 0)
+            {
+                using var pen = new Pen(tint.Drawing, strokeWidth);
+                Graphics.DrawPath(pen, path);
+            }
+            else
+            {
+                using var brush = new SolidBrush(tint.Drawing);
+                Graphics.FillPath(brush, path);
+            }
         }
         finally
         {
@@ -239,7 +260,9 @@ public static class GUI
         bounds.Y += style.padding.top * matrix.Scale;
         bounds.Height -= style.padding.top * matrix.Scale;
         using var font = DrawingFont(style, matrix.Scale);
-        using var brush = new SolidBrush(style.normal.textColor.Drawing);
+        var textColor = style.normal.textColor;
+        using var brush = new SolidBrush(new Color(textColor.r * color.r, textColor.g * color.g,
+            textColor.b * color.b, textColor.a * color.a).Drawing);
         using var format = new StringFormat(StringFormat.GenericTypographic)
         {
             Alignment = style.alignment is TextAnchor.UpperCenter or TextAnchor.MiddleCenter ? StringAlignment.Center : StringAlignment.Near,
